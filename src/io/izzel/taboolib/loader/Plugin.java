@@ -257,7 +257,11 @@ public abstract class Plugin extends JavaPlugin {
         File file = file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
         try {
             ZipFile zipFile = new ZipFile(toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file));
-            return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(zipFile.getInputStream(zipFile.getEntry("plugin.yml")))).getString("main"));
+            try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
+                return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream)).getString("main"));
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
         } catch (Throwable t) {
             t.printStackTrace();
         }
