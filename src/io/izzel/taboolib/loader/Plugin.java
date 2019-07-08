@@ -149,7 +149,7 @@ public abstract class Plugin extends JavaPlugin {
     public static double getVersion() {
         try {
             ZipFile zipFile = new ZipFile(libFile);
-            return NumberConversions.toDouble(readFully(zipFile.getInputStream(zipFile.getEntry("version")), StandardCharsets.UTF_8));
+            return NumberConversions.toDouble(readFully(zipFile.getInputStream(zipFile.getEntry("__resources__/version")), StandardCharsets.UTF_8));
         } catch (Throwable t) {
             t.printStackTrace();
         }
