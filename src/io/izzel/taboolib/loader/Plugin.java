@@ -46,7 +46,7 @@ public abstract class Plugin extends JavaPlugin {
     };
 
     protected static Plugin plugin;
-    protected static File libFile = new File("libs/TabooLib.jar");
+    protected static File libFile = file(new File("libs/TabooLib.jar"));
 
     /**
      * 插件在初始化过程中出现错误
