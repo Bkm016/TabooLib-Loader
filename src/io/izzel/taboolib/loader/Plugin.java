@@ -46,7 +46,7 @@ public abstract class Plugin extends JavaPlugin {
     };
 
     protected static Plugin plugin;
-    protected static File libFile = file(new File("libs/TabooLib.jar"));
+    protected static File libFile = new File("libs/TabooLib.jar");
 
     /**
      * 插件在初始化过程中出现错误
@@ -322,7 +322,7 @@ public abstract class Plugin extends JavaPlugin {
             InputStream resourceAsStream = Plugin.class.getClassLoader().getResourceAsStream("TabooLib.jar");
             if (resourceAsStream != null) {
                 // 写入文件
-                toFile(resourceAsStream, libFile);
+                toFile(resourceAsStream, file(libFile));
             }
             // 在线资源下载
             else if (!download()) {
@@ -359,7 +359,7 @@ public abstract class Plugin extends JavaPlugin {
                         return;
                     }
                     Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
-                    if (downloadFile(newVersion[2], libFile)) {
+                    if (downloadFile(newVersion[2], file(libFile))) {
                         // 如果资源下载成功则重启服务器
                         restart();
                     }
@@ -374,7 +374,7 @@ public abstract class Plugin extends JavaPlugin {
             addToPath(libFile);
             // 初始化 TabooLib 主类
             try {
-                Class.forName("io.izzel.taboolib.TabooLib");
+                Class.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader());
             } catch (Throwable t) {
                 t.printStackTrace();
             }
@@ -386,7 +386,7 @@ public abstract class Plugin extends JavaPlugin {
     private static boolean download() {
         Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
         String[] newVersion = getNewVersion();
-        if (newVersion == null || !downloadFile(newVersion[2], libFile)) {
+        if (newVersion == null || !downloadFile(newVersion[2], file(libFile))) {
             close();
             return false;
         }
