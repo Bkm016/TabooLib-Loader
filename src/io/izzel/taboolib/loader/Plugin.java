@@ -75,6 +75,7 @@ public abstract class Plugin extends JavaPlugin {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        PluginLoader.postLoad(this);
     }
 
     @Override
@@ -88,6 +89,7 @@ public abstract class Plugin extends JavaPlugin {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        PluginLoader.postStart(this);
         Bukkit.getScheduler().runTask(this, () -> {
             PluginLoader.active(this);
             onActivated();
@@ -105,6 +107,7 @@ public abstract class Plugin extends JavaPlugin {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        PluginLoader.postStop(this);
     }
 
     /**
