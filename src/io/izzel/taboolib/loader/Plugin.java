@@ -13,7 +13,10 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -136,11 +139,7 @@ public abstract class Plugin extends JavaPlugin {
      * 跳过 TabooLib 主类的初始化过程
      */
     public static boolean isLoaded() {
-        try {
-            return Class.forName("io.izzel.taboolib.TabooLib", false, Bukkit.class.getClassLoader()) != null;
-        } catch (Throwable ignored) {
-        }
-        return false;
+        return Loader.forName("io.izzel.taboolib.TabooLib", false, Plugin.class.getClassLoader()) != null;
     }
 
     /**
@@ -185,13 +184,14 @@ public abstract class Plugin extends JavaPlugin {
      * 防止出现未知错误
      */
     private static void addToPath(File file) {
-        try {
-            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            method.setAccessible(true);
-            method.invoke(Bukkit.class.getClassLoader(), file.toURI().toURL());
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        Loader.addPath(file);
+//        try {
+//            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+//            method.setAccessible(true);
+//            method.invoke(Bukkit.class.getClassLoader(), file.toURI().toURL());
+//        } catch (Throwable e) {
+//            e.printStackTrace();
+//        }
     }
 
     private static boolean downloadFile(String in, File file) {
@@ -264,14 +264,6 @@ public abstract class Plugin extends JavaPlugin {
             }
         } catch (Throwable t) {
             t.printStackTrace();
-        }
-        return null;
-    }
-
-    private static Class getCaller(Class<?> obj) {
-        try {
-            return Class.forName(Thread.currentThread().getStackTrace()[3].getClassName(), false, obj.getClassLoader());
-        } catch (ClassNotFoundException ignored) {
         }
         return null;
     }
@@ -373,10 +365,9 @@ public abstract class Plugin extends JavaPlugin {
             // 并保证在热重载过程中不会被 Bukkit 卸载
             addToPath(libFile);
             // 初始化 TabooLib 主类
-            try {
-                Class.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader());
-            } catch (Throwable t) {
-                t.printStackTrace();
+            if (Loader.forName("io.izzel.taboolib.TabooLib", true, Plugin.class.getClassLoader()) == null) {
+                Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
+                initFailed = true;
             }
         }
         // 清理临时文件
@@ -453,5 +444,42 @@ public abstract class Plugin extends JavaPlugin {
 
         double value();
 
+    }
+
+    static class Loader extends URLClassLoader {
+
+        static MethodHandles.Lookup lookup;
+
+        static {
+            try {
+                Field lookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+                lookupField.setAccessible(true);
+                lookup = (MethodHandles.Lookup) lookupField.get(null);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+
+        public Loader(java.net.URL[] urls) {
+            super(urls);
+        }
+
+        public static void addPath(File file) {
+            try {
+                MethodHandle methodHandle = lookup.findSpecial(URLClassLoader.class, "addURL", MethodType.methodType(void.class, java.net.URL.class), URLClassLoader.class);
+                methodHandle.invoke(Bukkit.class.getClassLoader(), file.toURI().toURL());
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+
+        public static Class forName(String name, boolean initialize, ClassLoader loader) {
+            try {
+                MethodHandle methodHandle = lookup.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
+                return (Class) methodHandle.invoke(name, initialize, loader);
+            } catch (Throwable ignored) {
+            }
+            return null;
+        }
     }
 }
