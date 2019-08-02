@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import io.izzel.taboolib.PluginLoader;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.NumberConversions;
 
@@ -24,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
 /**
@@ -56,6 +59,7 @@ public abstract class Plugin extends JavaPlugin {
      * 将在 onLoad 方法下关闭插件
      */
     protected static boolean initFailed;
+    protected static boolean forge = Loader.forName("net.minecraftforge.classloading.FMLForgePlugin", false, Plugin.class.getClassLoader()) != null;
 
     static {
         init();
@@ -75,7 +79,6 @@ public abstract class Plugin extends JavaPlugin {
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        PluginLoader.postLoad(this);
     }
 
     @Override
@@ -89,7 +92,6 @@ public abstract class Plugin extends JavaPlugin {
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        PluginLoader.postStart(this);
         Bukkit.getScheduler().runTask(this, () -> {
             PluginLoader.active(this);
             onActivated();
@@ -107,7 +109,6 @@ public abstract class Plugin extends JavaPlugin {
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        PluginLoader.postStop(this);
     }
 
     /**
@@ -142,7 +143,7 @@ public abstract class Plugin extends JavaPlugin {
      * 跳过 TabooLib 主类的初始化过程
      */
     public static boolean isLoaded() {
-        return Loader.forName("io.izzel.taboolib.TabooLib", false, Plugin.class.getClassLoader()) != null;
+        return Loader.forName("io.izzel.taboolib.TabooLib", false, Bukkit.class.getClassLoader()) != null;
     }
 
     /**
@@ -180,14 +181,7 @@ public abstract class Plugin extends JavaPlugin {
         return null;
     }
 
-    /**
-     * 将文件读取至内存中
-     * 读取后不会随着插件的卸载而卸载
-     * 请在执行前判断是否已经被读取
-     * 防止出现未知错误
-     */
-    private static void addToPath(File file) {
-        Loader.addPath(file);
+//    private static void addToPath(File file) {
 //        try {
 //            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
 //            method.setAccessible(true);
@@ -195,7 +189,7 @@ public abstract class Plugin extends JavaPlugin {
 //        } catch (Throwable e) {
 //            e.printStackTrace();
 //        }
-    }
+//    }
 
     private static boolean downloadFile(String in, File file) {
         try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
@@ -310,6 +304,48 @@ public abstract class Plugin extends JavaPlugin {
         file.delete();
     }
 
+    private static void LoadByPlugin() {
+        try {
+            org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(libFile);
+            plugin.onLoad();
+            Bukkit.getPluginManager().enablePlugin(plugin);
+        } catch (Throwable t) {
+            Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
+            initFailed = true;
+        }
+    }
+
+    private static File checkLibPlugin() {
+        File pluginDir = new File("plugins");
+        for (File plugin : pluginDir.listFiles()) {
+            if (plugin.getName().endsWith(".jar")) {
+                PluginDescriptionFile desc = getPluginDescription(plugin);
+                if (desc != null && desc.getName().equals("TabooLib5")) {
+                    return plugin;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static PluginDescriptionFile getPluginDescription(File file) {
+        PluginDescriptionFile descriptionFile = null;
+        try (JarFile jar = new JarFile(file)) {
+            JarEntry entry = jar.getJarEntry("plugin.yml");
+            if (entry == null) {
+                return descriptionFile;
+            }
+            try (InputStream stream = jar.getInputStream(entry)) {
+                descriptionFile = new PluginDescriptionFile(stream);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return descriptionFile;
+    }
+
     private static void init() {
         // 检查 TabooLib 文件是否存在
         if (!libFile.exists()) {
@@ -362,15 +398,32 @@ public abstract class Plugin extends JavaPlugin {
                 }
             }
         }
-        // 检查 TabooLib 是否已经被加载
-        if (!isLoaded()) {
-            // 将 TabooLib 通过 Bukkit.class 类加载器加载至内存中供其他插件使用
-            // 并保证在热重载过程中不会被 Bukkit 卸载
-            addToPath(libFile);
-            // 初始化 TabooLib 主类
-            if (Loader.forName("io.izzel.taboolib.TabooLib", true, Plugin.class.getClassLoader()) == null) {
-                Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
-                initFailed = true;
+        // 如果是 Forge 服务端
+        if (forge) {
+            // 检查 TabooLib5 是否已经被加载
+            if (Bukkit.getPluginManager().getPlugin("TabooLib5") == null) {
+                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7检测到当前为 Forge 服务端, 主运行库将以插件模式启动.");
+                // 将 TabooLib 通过插件方式加载到服务端
+                LoadByPlugin();
+            }
+        } else {
+            // 检查 TabooLib5 是否被当做插件放入插件文件夹
+            File pluginFile = checkLibPlugin();
+            if (pluginFile != null) {
+                pluginFile.delete();
+                restartDuplicate(pluginFile.getName());
+                return;
+            }
+            // 检查 TabooLib 是否已经被加载
+            if (!isLoaded()) {
+                // 将 TabooLib 通过 Bukkit.class 类加载器加载至内存中供其他插件使用
+                // 并保证在热重载过程中不会被 Bukkit 卸载
+                Loader.addPath(libFile);
+                // 初始化 TabooLib 主类
+                if (Loader.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader()) == null) {
+                    Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
+                    initFailed = true;
+                }
             }
         }
         // 清理临时文件
@@ -433,6 +486,26 @@ public abstract class Plugin extends JavaPlugin {
         Bukkit.shutdown();
     }
 
+    private static void restartDuplicate(String name) {
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 警告 ####################");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  请勿将 §4TabooLib 5.0 §c放入插件文件夹中.");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  已删除 §4" + name);
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  服务端将在 5 秒后重新启动.");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 警告 ####################");
+        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+        try {
+            Thread.sleep(5000L);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        initFailed = true;
+        Bukkit.shutdown();
+    }
+
     public static Plugin getPlugin() {
         return plugin;
     }
@@ -467,6 +540,12 @@ public abstract class Plugin extends JavaPlugin {
             super(urls);
         }
 
+        /**
+         * 将文件读取至内存中
+         * 读取后不会随着插件的卸载而卸载
+         * 请在执行前判断是否已经被读取
+         * 防止出现未知错误
+         */
         public static void addPath(File file) {
             try {
                 MethodHandle methodHandle = lookup.findSpecial(URLClassLoader.class, "addURL", MethodType.methodType(void.class, java.net.URL.class), URLClassLoader.class);
