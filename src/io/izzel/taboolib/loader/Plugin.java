@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +50,84 @@ public abstract class Plugin extends JavaPlugin {
                     "https://api.github.com/repos/Bkm016/TabooLib/releases/latest",
                     "https://github.com/Bkm016/TabooLib/releases/latest/download/TabooLib.jar",
             },
+    };
+
+    /**
+     * 语言文件
+     */
+    public static final String[][] MESSAGE = {
+            {
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 错误 ####################",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  初始化 §4TabooLib §c失败!",
+                    "§4[TabooLib] §c  无法获取版本信息或下载时出现错误.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  请检查服务器的互联网连接是否有效.",
+                    "§4[TabooLib] §c  手动将 §4TabooLib.jar §c放入服务端根目录.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  服务端将在 5 秒后继续启动.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  下载地址:",
+                    "§4[TabooLib] §c   §4https://github.com/Bkm016/TabooLib/releases",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 错误 ####################",
+                    "§4[TabooLib] §c"
+            },
+            {
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 错误 ####################",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  初始化 §4TabooLib §c失败!",
+                    "§4[TabooLib] §c  无法获取版本信息或下载时出现错误.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  请检查服务器的互联网连接是否有效.",
+                    "§4[TabooLib] §c  手动将 §4TabooLib.jar §c放入服务端根目录.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  下载地址:",
+                    "§4[TabooLib] §c   §4https://github.com/Bkm016/TabooLib/releases",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 错误 ####################",
+                    "§4[TabooLib] §c"
+            },
+            {
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  初始化 §4TabooLib §c失败!",
+                    "§4[TabooLib] §c  当前运行的版本低于插件所需版本.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  已下载最新版.",
+                    "§4[TabooLib] §c  服务端将在 5 秒后重新启动.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c"
+            },
+            {
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  初始化 §4TabooLib §c失败!",
+                    "§4[TabooLib] §c  当前运行的版本低于插件所需版本.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  已下载最新版.",
+                    "§4[TabooLib] §c  将在下次启动服务端时启动插件.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c"
+            },
+            {
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  请勿将 §4TabooLib 5.0 §c放入插件文件夹中.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  已删除 §4{name}",
+                    "§4[TabooLib] §c  服务端将在 5 秒后重新启动.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c",
+            }
     };
 
     protected static Plugin plugin;
@@ -181,129 +260,6 @@ public abstract class Plugin extends JavaPlugin {
         return null;
     }
 
-//    private static void addToPath(File file) {
-//        try {
-//            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-//            method.setAccessible(true);
-//            method.invoke(Bukkit.class.getClassLoader(), file.toURI().toURL());
-//        } catch (Throwable e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    private static boolean downloadFile(String in, File file) {
-        try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
-            toFile(bufferedInputStream, file);
-            return true;
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return false;
-    }
-
-    private static File toFile(String in, File file) {
-        try (FileWriter fileWriter = new FileWriter(file); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-            bufferedWriter.write(in);
-            bufferedWriter.flush();
-        } catch (Exception ignored) {
-        }
-        return file;
-    }
-
-    private static File toFile(InputStream inputStream, File file) {
-        try (FileOutputStream fos = new FileOutputStream(file); BufferedOutputStream bos = new BufferedOutputStream(fos)) {
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = inputStream.read(buf)) > 0) {
-                bos.write(buf, 0, len);
-            }
-            bos.flush();
-        } catch (Exception ignored) {
-        }
-        return file;
-    }
-
-    private static String readFromURL(String in, String def) {
-        return Optional.ofNullable(readFromURL(in)).orElse(def);
-    }
-
-    private static String readFromURL(String in) {
-        try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
-            return new String(readFully(bufferedInputStream));
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return null;
-    }
-
-    private static String readFully(InputStream inputStream, Charset charset) throws IOException {
-        return new String(readFully(inputStream), charset);
-    }
-
-    private static byte[] readFully(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        byte[] buf = new byte[1024];
-        int len = 0;
-        while ((len = inputStream.read(buf)) > 0) {
-            stream.write(buf, 0, len);
-        }
-        return stream.toByteArray();
-    }
-
-    private static Class<?> getMainClass() {
-        File file = file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
-        try {
-            ZipFile zipFile = new ZipFile(toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file));
-            try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
-                return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream)).getString("main"));
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return null;
-    }
-
-    private static File file(File file) {
-        if (!file.exists()) {
-            folder(file);
-            try {
-                file.createNewFile();
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-        return file;
-    }
-
-    private static File folder(File file) {
-        if (!file.exists()) {
-            String filePath = file.getPath();
-            int index = filePath.lastIndexOf(File.separator);
-            String folderPath;
-            File folder;
-            if ((index >= 0) && (!(folder = new File(filePath.substring(0, index))).exists())) {
-                folder.mkdirs();
-            }
-        }
-        return file;
-    }
-
-    private static void deepDelete(File file) {
-        if (!file.exists()) {
-            return;
-        }
-        if (file.isFile()) {
-            file.delete();
-            return;
-        }
-        for (File file1 : Objects.requireNonNull(file.listFiles())) {
-            deepDelete(file1);
-        }
-        file.delete();
-    }
-
     private static void LoadByPlugin() {
         try {
             org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(libFile);
@@ -324,6 +280,21 @@ public abstract class Plugin extends JavaPlugin {
                     return plugin;
                 }
             }
+        }
+        return null;
+    }
+
+    private static Class<?> getMainClass() {
+        File file = file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
+        try {
+            ZipFile zipFile = new ZipFile(toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file));
+            try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
+                return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream)).getString("main"));
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
         return null;
     }
@@ -356,7 +327,7 @@ public abstract class Plugin extends JavaPlugin {
                 toFile(resourceAsStream, file(libFile));
             }
             // 在线资源下载
-            else if (!download()) {
+            else if (!downloadFile()) {
                 return;
             }
         }
@@ -366,7 +337,7 @@ public abstract class Plugin extends JavaPlugin {
             // 本地版本获取失败
             if (version == -1) {
                 // 重新下载文件，如果下载失败则停止加载
-                if (!download()) {
+                if (!downloadFile()) {
                     return;
                 }
             }
@@ -378,7 +349,7 @@ public abstract class Plugin extends JavaPlugin {
                     // 获取版本信息
                     String[] newVersion = getNewVersion();
                     if (newVersion == null) {
-                        close();
+                        disablePlugin();
                         return;
                     }
                     // 检查依赖版本是否合理
@@ -392,7 +363,7 @@ public abstract class Plugin extends JavaPlugin {
                     Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
                     if (downloadFile(newVersion[2], file(libFile))) {
                         // 如果资源下载成功则重启服务器
-                        restart();
+                        restartServer();
                     }
                     return;
                 }
@@ -430,53 +401,47 @@ public abstract class Plugin extends JavaPlugin {
         deepDelete(new File("plugins/TabooLib/temp"));
     }
 
-    private static boolean download() {
+    private static boolean downloadFile() {
         Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
         String[] newVersion = getNewVersion();
         if (newVersion == null || !downloadFile(newVersion[2], file(libFile))) {
-            close();
+            disablePlugin();
             return false;
         }
         return true;
     }
 
-    private static void close() {
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 错误 ####################");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  初始化 §4TabooLib §c失败!");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  无法获取版本信息或下载时出现错误.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  请检查服务器的互联网连接是否有效.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  手动将 §4TabooLib.jar §c放入服务端根目录.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  服务端将在 5 秒后继续启动.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  下载地址:");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c   §4https://github.com/Bkm016/TabooLib/releases");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 错误 ####################");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+    private static boolean disablePlugin() {
+        try {
+            if (Bukkit.getOnlinePlayers().size() > 0) {
+                Arrays.stream(MESSAGE[1]).forEach(message -> Bukkit.getConsoleSender().sendMessage(message));
+                initFailed = true;
+                return false;
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        Arrays.stream(MESSAGE[0]).forEach(message -> Bukkit.getConsoleSender().sendMessage(message));
         try {
             Thread.sleep(5000L);
         } catch (Throwable t) {
             t.printStackTrace();
         }
         initFailed = true;
+        return true;
     }
 
-    private static void restart() {
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 警告 ####################");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  初始化 §4TabooLib §c失败!");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  当前运行的版本低于插件所需版本.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  已下载最新版.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  服务端将在 5 秒后重新启动.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 警告 ####################");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+    private static boolean restartServer() {
+        try {
+            if (Bukkit.getOnlinePlayers().size() > 0) {
+                Arrays.stream(MESSAGE[3]).forEach(message -> Bukkit.getConsoleSender().sendMessage(message));
+                initFailed = true;
+                return false;
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        Arrays.stream(MESSAGE[2]).forEach(message -> Bukkit.getConsoleSender().sendMessage(message));
         try {
             Thread.sleep(5000L);
         } catch (Throwable t) {
@@ -484,19 +449,11 @@ public abstract class Plugin extends JavaPlugin {
         }
         initFailed = true;
         Bukkit.shutdown();
+        return true;
     }
 
     private static void restartDuplicate(String name) {
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 警告 ####################");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  请勿将 §4TabooLib 5.0 §c放入插件文件夹中.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  已删除 §4" + name);
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c  服务端将在 5 秒后重新启动.");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c#################### 警告 ####################");
-        Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c");
+        Arrays.stream(MESSAGE[4]).forEach(message -> Bukkit.getConsoleSender().sendMessage(message.replace("{name}", name)));
         try {
             Thread.sleep(5000L);
         } catch (Throwable t) {
@@ -504,6 +461,142 @@ public abstract class Plugin extends JavaPlugin {
         }
         initFailed = true;
         Bukkit.shutdown();
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static String readFully(InputStream inputStream, Charset charset) throws IOException {
+        return new String(readFully(inputStream), charset);
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static byte[] readFully(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        byte[] buf = new byte[1024];
+        int len = 0;
+        while ((len = inputStream.read(buf)) > 0) {
+            stream.write(buf, 0, len);
+        }
+        return stream.toByteArray();
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static String readFromURL(String in, String def) {
+        return Optional.ofNullable(readFromURL(in)).orElse(def);
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static String readFromURL(String in) {
+        try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
+            return new String(readFully(bufferedInputStream));
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static boolean downloadFile(String in, File file) {
+        try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
+            toFile(bufferedInputStream, file);
+            return true;
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static File toFile(String in, File file) {
+        try (FileWriter fileWriter = new FileWriter(file); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            bufferedWriter.write(in);
+            bufferedWriter.flush();
+        } catch (Exception ignored) {
+        }
+        return file;
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static File toFile(InputStream inputStream, File file) {
+        try (FileOutputStream fos = new FileOutputStream(file); BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buf)) > 0) {
+                bos.write(buf, 0, len);
+            }
+            bos.flush();
+        } catch (Exception ignored) {
+        }
+        return file;
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static File file(File file) {
+        if (!file.exists()) {
+            folder(file);
+            try {
+                file.createNewFile();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+        return file;
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static File folder(File file) {
+        if (!file.exists()) {
+            String filePath = file.getPath();
+            int index = filePath.lastIndexOf(File.separator);
+            String folderPath;
+            File folder;
+            if ((index >= 0) && (!(folder = new File(filePath.substring(0, index))).exists())) {
+                folder.mkdirs();
+            }
+        }
+        return file;
+    }
+
+    /**
+     * I/O 相关工具
+     */
+    private static void deepDelete(File file) {
+        if (!file.exists()) {
+            return;
+        }
+        if (file.isFile()) {
+            file.delete();
+            return;
+        }
+        for (File file1 : Objects.requireNonNull(file.listFiles())) {
+            deepDelete(file1);
+        }
+        file.delete();
+    }
+
+    public static boolean isInitFailed() {
+        return initFailed;
+    }
+
+    public static boolean isForge() {
+        return forge;
     }
 
     public static Plugin getPlugin() {
