@@ -33,6 +33,8 @@ import java.util.zip.ZipFile;
 /**
  * @Author 坏黑
  * @Since 2019-07-05 9:03
+ *
+ * 1.2
  */
 public abstract class Plugin extends JavaPlugin {
 
