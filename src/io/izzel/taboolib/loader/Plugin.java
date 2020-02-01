@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.NumberConversions;
+import sun.misc.Unsafe;
 
 import java.io.*;
 import java.lang.annotation.ElementType;
@@ -18,6 +19,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -619,12 +621,17 @@ public abstract class Plugin extends JavaPlugin {
     static class Loader extends URLClassLoader {
 
         static MethodHandles.Lookup lookup;
+        static Unsafe UNSAFE;
 
         static {
             try {
+                Field field = Unsafe.class.getDeclaredField("theUnsafe");
+                field.setAccessible(true);
+                UNSAFE = (Unsafe) field.get(null);
                 Field lookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-                lookupField.setAccessible(true);
-                lookup = (MethodHandles.Lookup) lookupField.get(null);
+                Object lookupBase = UNSAFE.staticFieldBase(lookupField);
+                long lookupOffset = UNSAFE.staticFieldOffset(lookupField);
+                lookup = (MethodHandles.Lookup) UNSAFE.getObject(lookupBase, lookupOffset);
             } catch (Throwable t) {
                 t.printStackTrace();
             }
@@ -642,8 +649,11 @@ public abstract class Plugin extends JavaPlugin {
          */
         public static void addPath(File file) {
             try {
-                MethodHandle methodHandle = lookup.findSpecial(URLClassLoader.class, "addURL", MethodType.methodType(void.class, java.net.URL.class), URLClassLoader.class);
-                methodHandle.invoke(Bukkit.class.getClassLoader(), file.toURI().toURL());
+                Field ucp = Bukkit.class.getClassLoader().getClass().getDeclaredField("ucp");
+                long ucpOffset = UNSAFE.objectFieldOffset(ucp);
+                Object urlClassPath = UNSAFE.getObject(Bukkit.class.getClassLoader(), ucpOffset);
+                MethodHandle methodHandle = lookup.findVirtual(urlClassPath.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));
+                methodHandle.invoke(urlClassPath, file.toURI().toURL());
             } catch (Throwable t) {
                 t.printStackTrace();
             }
