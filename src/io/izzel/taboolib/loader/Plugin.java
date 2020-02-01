@@ -629,8 +629,9 @@ public abstract class Plugin extends JavaPlugin {
                 field.setAccessible(true);
                 UNSAFE = (Unsafe) field.get(null);
                 Field lookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+                Object lookupBase = UNSAFE.staticFieldBase(lookupField);
                 long lookupOffset = UNSAFE.staticFieldOffset(lookupField);
-                lookup = (MethodHandles.Lookup) UNSAFE.getObject(null, lookupOffset);
+                lookup = (MethodHandles.Lookup) UNSAFE.getObject(lookupBase, lookupOffset);
             } catch (Throwable t) {
                 t.printStackTrace();
             }
