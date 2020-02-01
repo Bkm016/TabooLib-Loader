@@ -3,6 +3,7 @@ package io.izzel.taboolib.loader;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.izzel.taboolib.PluginLoader;
+import io.izzel.taboolib.util.Strings;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -20,10 +21,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -592,6 +596,25 @@ public abstract class Plugin extends JavaPlugin {
             deepDelete(file1);
         }
         file.delete();
+    }
+
+    /**
+     * md5 相关工具
+     */
+    private static String getFileMD5(File file) {
+        try(FileInputStream fileInputStream = new FileInputStream(file)) {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = fileInputStream.read(buffer, 0, 1024)) != -1) {
+                digest.update(buffer, 0, length);
+            }
+            byte[] md5Bytes  = digest.digest();
+            return new BigInteger(1, md5Bytes).toString(16);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return "";
     }
 
     public static boolean isInitFailed() {
