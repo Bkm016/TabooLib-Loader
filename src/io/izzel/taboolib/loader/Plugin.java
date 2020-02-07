@@ -19,7 +19,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -661,11 +660,10 @@ public abstract class Plugin extends JavaPlugin {
 
         public static Class forName(String name, boolean initialize, ClassLoader loader) {
             try {
-                MethodHandle methodHandle = lookup.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
-                return (Class) methodHandle.invoke(name, initialize, loader);
+                return Class.forName(name, initialize, loader);
             } catch (Throwable ignored) {
+                return null;
             }
-            return null;
         }
     }
 }
