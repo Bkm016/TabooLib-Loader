@@ -684,11 +684,10 @@ public abstract class Plugin extends JavaPlugin {
 
         public static Class forName(String name, boolean initialize, ClassLoader loader) {
             try {
-                MethodHandle methodHandle = lookup.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
-                return (Class) methodHandle.invoke(name, initialize, loader);
+                return Class.forName(name, initialize, loader);
             } catch (Throwable ignored) {
+                return null;
             }
-            return null;
         }
     }
 }
