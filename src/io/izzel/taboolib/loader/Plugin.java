@@ -186,12 +186,12 @@ public abstract class Plugin extends JavaPlugin {
         if (initFailed) {
             return;
         }
-        PluginLoader.stop(this);
         try {
             onStopping();
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        PluginLoader.stop(this);
     }
 
     /**
