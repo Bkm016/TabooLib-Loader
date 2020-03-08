@@ -42,12 +42,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="io.izzel.taboolib.loader.TabooLibLoader.main" />
-    <orderEntry type="library" name="Gradle: org.spigotmc:spigot:1.15.2-R0.1-20200219.223634-9" level="project" />
-    <orderEntry type="library" name="Gradle: io.izzel.taboolib:TabooLib:all:5.19" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.41" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.41" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.41" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
   </component>
   <component name="TestModuleProperties" production-module="io.izzel.taboolib.loader.TabooLibLoader.main" />
 </module>
