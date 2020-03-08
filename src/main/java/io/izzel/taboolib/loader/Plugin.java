@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.izzel.taboolib.PluginLoader;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -155,6 +156,11 @@ public abstract class Plugin extends JavaPlugin {
             return;
         }
         plugin = this;
+        try {
+            preLoad();
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         PluginLoader.addPlugin(this);
         PluginLoader.load(this);
         try {
@@ -192,6 +198,20 @@ public abstract class Plugin extends JavaPlugin {
             t.printStackTrace();
         }
         PluginLoader.stop(this);
+    }
+
+    @Deprecated
+    @Override
+    public final FileConfiguration getConfig() {
+        return super.getConfig();
+    }
+
+    @Override
+    public File getFile() {
+        return super.getFile();
+    }
+
+    public void preLoad() {
     }
 
     /**
@@ -264,6 +284,42 @@ public abstract class Plugin extends JavaPlugin {
         return null;
     }
 
+    public static YamlConfiguration getPluginDescriptionYaml(File file) {
+        YamlConfiguration conf = new YamlConfiguration();
+        try (JarFile jar = new JarFile(file)) {
+            JarEntry entry = jar.getJarEntry("plugin.yml");
+            if (entry == null) {
+                return conf;
+            }
+            try (InputStream stream = jar.getInputStream(entry)) {
+                conf.loadFromString(readFully(stream, StandardCharsets.UTF_8));
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return conf;
+    }
+
+    public static PluginDescriptionFile getPluginDescription(File file) {
+        PluginDescriptionFile descriptionFile = null;
+        try (JarFile jar = new JarFile(file)) {
+            JarEntry entry = jar.getJarEntry("plugin.yml");
+            if (entry == null) {
+                return descriptionFile;
+            }
+            try (InputStream stream = jar.getInputStream(entry)) {
+                descriptionFile = new PluginDescriptionFile(stream);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return descriptionFile;
+    }
+
     private static void LoadByPlugin() {
         try {
             org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(libFile);
@@ -288,12 +344,12 @@ public abstract class Plugin extends JavaPlugin {
         return null;
     }
 
-    private static Class<?> getMainClass() {
+    private static Class<?> getClass(String node) {
         File file = file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
         try {
             ZipFile zipFile = new ZipFile(toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file));
             try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
-                return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream)).getString("main"));
+                return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream)).getString(node));
             } catch (Throwable t) {
                 t.printStackTrace();
             }
@@ -301,24 +357,6 @@ public abstract class Plugin extends JavaPlugin {
             t.printStackTrace();
         }
         return null;
-    }
-
-    private static PluginDescriptionFile getPluginDescription(File file) {
-        PluginDescriptionFile descriptionFile = null;
-        try (JarFile jar = new JarFile(file)) {
-            JarEntry entry = jar.getJarEntry("plugin.yml");
-            if (entry == null) {
-                return descriptionFile;
-            }
-            try (InputStream stream = jar.getInputStream(entry)) {
-                descriptionFile = new PluginDescriptionFile(stream);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return descriptionFile;
     }
 
     private static void init() {
@@ -345,9 +383,12 @@ public abstract class Plugin extends JavaPlugin {
                     return;
                 }
             }
-            Class<?> mainClass = getMainClass();
-            if (mainClass != null && mainClass.isAnnotationPresent(Version.class)) {
-                double requireVersion = mainClass.getAnnotation(Version.class).value();
+            Class<?> mainClass = getClass("main");
+            if (mainClass != null) {
+                if (mainClass.equals(PluginTransfer.class)) {
+                    mainClass = getClass("main-transfer");
+                }
+                double requireVersion = mainClass.isAnnotationPresent(Version.class) ? mainClass.getAnnotation(Version.class).value() : 0;
                 // 依赖版本高于当前运行版本
                 if (requireVersion > version) {
                     // 获取版本信息
@@ -635,7 +676,6 @@ public abstract class Plugin extends JavaPlugin {
     public @interface Version {
 
         double value();
-
     }
 
     static class Loader extends URLClassLoader {

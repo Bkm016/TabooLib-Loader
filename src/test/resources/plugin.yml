@@ -1,0 +1,6 @@
+name: Example
+main: me.skymc.example.PluginTransfer
+main-transfer: me.skymc.example.ExamplePlugin
+version: 1.0
+
+api-version: 1.13

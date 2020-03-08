@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.2.41'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
+}
+
+configurations {
+    group = 'io.izzel.taboolib.loader'
+    version = '1.6'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    tasks.build.dependsOn tasks.shadowJar
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+    
+    defaultTasks 'clean', 'build'
+}
+
+repositories {
+    maven { url "http://ptms.ink:8081/repository/codemc-nms/" }
+    maven { url "http://ptms.ink:8081/repository/maven-releases/" }
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.spigotmc:spigot:1.15.2-R0.1-20200219.223634-9'
+    compile 'io.izzel.taboolib:TabooLib:5.19:all'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:1.2.41"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.41"
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
