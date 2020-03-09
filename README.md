@@ -8,7 +8,7 @@ repositories {
 }
 
 dependencies {
-    compile 'io.izzel.taboolib:TabooLibLoader:1.6:all'
+    compile 'io.izzel.taboolib:TabooLibLoader:1.7:all'
 }
 
 shadowJar {
