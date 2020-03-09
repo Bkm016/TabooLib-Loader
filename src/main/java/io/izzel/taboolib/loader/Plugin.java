@@ -61,7 +61,7 @@ public abstract class Plugin extends JavaPlugin {
      * 语言文件
      */
     public static final String[][] MESSAGE = {
-            {
+            { // 0
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 错误 ####################",
                     "§4[TabooLib] §c",
@@ -79,7 +79,7 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c#################### 错误 ####################",
                     "§4[TabooLib] §c"
             },
-            {
+            { // 1
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 错误 ####################",
                     "§4[TabooLib] §c",
@@ -95,7 +95,7 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c#################### 错误 ####################",
                     "§4[TabooLib] §c"
             },
-            {
+            { // 2
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 警告 ####################",
                     "§4[TabooLib] §c",
@@ -108,7 +108,7 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c#################### 警告 ####################",
                     "§4[TabooLib] §c"
             },
-            {
+            { // 3
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 警告 ####################",
                     "§4[TabooLib] §c",
@@ -121,7 +121,7 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c#################### 警告 ####################",
                     "§4[TabooLib] §c"
             },
-            {
+            { // 4
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 警告 ####################",
                     "§4[TabooLib] §c",
@@ -132,6 +132,18 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 警告 ####################",
                     "§4[TabooLib] §c",
+            },
+            { // 5
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  初始化 §4TabooLib §c失败!",
+                    "§4[TabooLib] §c  当前运行的版本低于插件所需版本.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c  已下载最新版.",
+                    "§4[TabooLib] §c",
+                    "§4[TabooLib] §c#################### 警告 ####################",
+                    "§4[TabooLib] §c"
             }
     };
 
@@ -359,8 +371,10 @@ public abstract class Plugin extends JavaPlugin {
 
     private static Class<?> getClass(String node) {
         try {
-            Class.forName(getPluginDescriptionYaml().getString(node));
-        } catch (Throwable ignored) {
+            return Class.forName(getPluginDescriptionYaml().getString(node));
+        } catch (NoClassDefFoundError ignored) {
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
         return null;
     }
@@ -413,8 +427,7 @@ public abstract class Plugin extends JavaPlugin {
                         return;
                     }
                     Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
-                    if (downloadFile(newVersion[2], file(libFile)) && isLoaded()) {
-                        // 如果资源下载成功且服务器已经加载 TabooLib 则重启服务器
+                    if (downloadFile(newVersion[2], file(libFile))) {
                         restartServer();
                     }
                     return;
