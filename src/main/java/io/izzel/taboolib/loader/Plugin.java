@@ -35,9 +35,9 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
 /**
+ * @version 1.2 (2019-10-22 13:59:13)
  * @Author 坏黑
  * @Since 2019-07-05 9:03
- * @version 1.2 (2019-10-22 13:59:13)
  */
 public abstract class Plugin extends JavaPlugin {
 
@@ -52,8 +52,8 @@ public abstract class Plugin extends JavaPlugin {
                     "https://skymc.oss-cn-shanghai.aliyuncs.com/plugins/TabooLib.jar"
             },
             {
-                    "https://api.github.com/repos/Bkm016/TabooLib/releases/latest",
-                    "https://github.com/Bkm016/TabooLib/releases/latest/download/TabooLib.jar",
+                    "https://api.github.com/repos/TabooLib/TabooLib/releases/latest",
+                    "https://github.com/TabooLib/TabooLib/releases/latest/download/TabooLib.jar",
             },
     };
 
@@ -74,7 +74,7 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c  服务端将在 5 秒后继续启动.",
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c  下载地址:",
-                    "§4[TabooLib] §c   §4https://github.com/Bkm016/TabooLib/releases",
+                    "§4[TabooLib] §c   §4https://github.com/TabooLib/TabooLib/releases",
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 错误 ####################",
                     "§4[TabooLib] §c"
@@ -90,7 +90,7 @@ public abstract class Plugin extends JavaPlugin {
                     "§4[TabooLib] §c  手动将 §4TabooLib.jar §c放入服务端根目录.",
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c  下载地址:",
-                    "§4[TabooLib] §c   §4https://github.com/Bkm016/TabooLib/releases",
+                    "§4[TabooLib] §c   §4https://github.com/TabooLib/TabooLib/releases",
                     "§4[TabooLib] §c",
                     "§4[TabooLib] §c#################### 错误 ####################",
                     "§4[TabooLib] §c"
@@ -253,8 +253,7 @@ public abstract class Plugin extends JavaPlugin {
      * 获取 TabooLib 当前运行版本
      */
     public static double getVersion() {
-        try {
-            ZipFile zipFile = new ZipFile(libFile);
+        try (ZipFile zipFile = new ZipFile(libFile)) {
             return NumberConversions.toDouble(readFully(zipFile.getInputStream(zipFile.getEntry("__resources__/version")), StandardCharsets.UTF_8));
         } catch (Throwable t) {
             t.printStackTrace();
@@ -280,6 +279,20 @@ public abstract class Plugin extends JavaPlugin {
             } catch (Throwable t) {
                 t.printStackTrace();
             }
+        }
+        return null;
+    }
+
+    public static YamlConfiguration getPluginDescriptionYaml() {
+        File file = file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
+        try (ZipFile zipFile = new ZipFile(toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file))) {
+            try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
+                return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
         return null;
     }
@@ -345,16 +358,9 @@ public abstract class Plugin extends JavaPlugin {
     }
 
     private static Class<?> getClass(String node) {
-        File file = file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
         try {
-            ZipFile zipFile = new ZipFile(toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file));
-            try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
-                return Class.forName(YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream)).getString(node));
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
+            Class.forName(getPluginDescriptionYaml().getString(node));
+        } catch (Throwable ignored) {
         }
         return null;
     }
@@ -388,7 +394,8 @@ public abstract class Plugin extends JavaPlugin {
                 if (mainClass.equals(PluginTransfer.class)) {
                     mainClass = getClass("main-transfer");
                 }
-                double requireVersion = mainClass.isAnnotationPresent(Version.class) ? mainClass.getAnnotation(Version.class).value() : 0;
+                // 低于 5.19 版本无法在 Kotlin 作为主类的条件下检查更新
+                double requireVersion = mainClass == null ? 5.19 : (mainClass.isAnnotationPresent(Version.class) ? mainClass.getAnnotation(Version.class).value() : 0);
                 // 依赖版本高于当前运行版本
                 if (requireVersion > version) {
                     // 获取版本信息
@@ -406,8 +413,8 @@ public abstract class Plugin extends JavaPlugin {
                         return;
                     }
                     Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
-                    if (downloadFile(newVersion[2], file(libFile))) {
-                        // 如果资源下载成功则重启服务器
+                    if (downloadFile(newVersion[2], file(libFile)) && isLoaded()) {
+                        // 如果资源下载成功且服务器已经加载 TabooLib 则重启服务器
                         restartServer();
                     }
                     return;
@@ -432,6 +439,10 @@ public abstract class Plugin extends JavaPlugin {
             }
             // 检查 TabooLib 是否已经被加载
             if (!isLoaded()) {
+                YamlConfiguration description = getPluginDescriptionYaml();
+                if (description != null) {
+                    Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7当前由 " + description.getString("name") + " 引导主运行库启动.");
+                }
                 // 将 TabooLib 通过 Bukkit.class 类加载器加载至内存中供其他插件使用
                 // 并保证在热重载过程中不会被 Bukkit 卸载
                 Loader.addPath(libFile);
@@ -640,14 +651,14 @@ public abstract class Plugin extends JavaPlugin {
      * md5 相关工具
      */
     private static String getFileMD5(File file) {
-        try(FileInputStream fileInputStream = new FileInputStream(file)) {
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
             MessageDigest digest = MessageDigest.getInstance("MD5");
             byte[] buffer = new byte[1024];
             int length;
             while ((length = fileInputStream.read(buffer, 0, 1024)) != -1) {
                 digest.update(buffer, 0, length);
             }
-            byte[] md5Bytes  = digest.digest();
+            byte[] md5Bytes = digest.digest();
             return new BigInteger(1, md5Bytes).toString(16);
         } catch (Throwable t) {
             t.printStackTrace();
