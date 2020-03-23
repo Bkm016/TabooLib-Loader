@@ -4,7 +4,7 @@ package io.izzel.taboolib.loader;
  * @Author sky
  * @Since 2020-03-08 14:00
  */
-public abstract class PluginRedefine {
+public abstract class PluginRedefine<T> {
 
     public void onLoading() {
     }
@@ -18,7 +18,7 @@ public abstract class PluginRedefine {
     public void onActivated() {
     }
 
-    public static Plugin getPlugin() {
+    public Plugin getPlugin() {
         return Plugin.getPlugin();
     }
 }

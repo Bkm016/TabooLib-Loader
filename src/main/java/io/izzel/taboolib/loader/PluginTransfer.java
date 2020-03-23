@@ -1,7 +1,10 @@
 package io.izzel.taboolib.loader;
 
 import io.izzel.taboolib.PluginLoader;
+import io.izzel.taboolib.util.Reflection;
 import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.lang.reflect.Field;
 
 /**
  * @Author sky
@@ -15,7 +18,12 @@ public class PluginTransfer extends Plugin {
     public void preLoad() {
         YamlConfiguration conf = Plugin.getPluginDescriptionYaml(getFile());
         try {
-            redefine = (PluginRedefine) Class.forName(conf.getString("main-transfer")).newInstance();
+            Class<?> clazz = Class.forName(conf.getString("main-transfer"));
+            try {
+                redefine = (PluginRedefine) Reflection.getValue(null, clazz, true, "INSTANCE");
+            } catch (Throwable ignored) {
+                redefine = (PluginRedefine) clazz.newInstance();
+            }
         } catch (Throwable t) {
             t.printStackTrace();
         }
