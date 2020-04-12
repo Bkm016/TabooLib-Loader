@@ -6,6 +6,9 @@ package io.izzel.taboolib.loader;
  */
 public abstract class PluginRedefine {
 
+    public void preLoad() {
+    }
+
     public void onLoading() {
     }
 

@@ -16,9 +16,9 @@ public class PluginTransfer extends Plugin {
 
     @Override
     public void preLoad() {
-        YamlConfiguration conf = Plugin.getPluginDescriptionYaml(getFile());
+        YamlConfiguration conf = PluginHandle.getPluginDescription(getFile());
         try {
-            Class<?> clazz = Class.forName(conf.getString("main-transfer"));
+            Class<?> clazz = Class.forName(conf.getString("main-transfer"), false, PluginTransfer.class.getClassLoader());
             try {
                 redefine = (PluginRedefine) Reflection.getValue(null, clazz, true, "INSTANCE");
             } catch (Throwable ignored) {
@@ -28,6 +28,9 @@ public class PluginTransfer extends Plugin {
             t.printStackTrace();
         }
         PluginLoader.redefine(this, redefine);
+        if (redefine != null) {
+            redefine.preLoad();
+        }
     }
 
     @Override
