@@ -6,7 +6,7 @@ plugins {
 
 configurations {
     group = 'io.izzel.taboolib.loader'
-    version = '2.0'
+    version = '2.1'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
@@ -20,14 +20,14 @@ configurations {
 }
 
 repositories {
-    maven { url "http://ptms.ink:8081/repository/codemc-nms/" }
-    maven { url "http://ptms.ink:8081/repository/maven-releases/" }
+    maven { url "http://repo.ptms.ink/repository/codemc-nms/" }
+    maven { url "http://repo.ptms.ink/repository/maven-releases/" }
     mavenCentral()
 }
 
 dependencies {
-    shadow 'org.spigotmc:spigot:1.15.2-R0.1-20200219.223634-9'
-    shadow 'io.izzel.taboolib:TabooLib:5.19:all'
+    shadow 'ink.ptms.core:v11500:11500:all'
+    shadow 'io.izzel.taboolib:TabooLib:5.28:all'
     shadow "org.jetbrains.kotlin:kotlin-stdlib:1.2.41"
     shadow "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.41"
 }

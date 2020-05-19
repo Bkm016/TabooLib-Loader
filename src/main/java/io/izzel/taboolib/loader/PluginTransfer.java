@@ -22,7 +22,7 @@ public class PluginTransfer extends Plugin {
             try {
                 redefine = (PluginRedefine) Reflection.getValue(null, clazz, true, "INSTANCE");
             } catch (Throwable ignored) {
-                redefine = (PluginRedefine) clazz.newInstance();
+                redefine = (PluginRedefine) Reflection.instantiateObject(clazz);
             }
         } catch (Throwable t) {
             t.printStackTrace();
