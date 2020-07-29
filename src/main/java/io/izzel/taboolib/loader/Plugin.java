@@ -36,7 +36,8 @@ public abstract class Plugin extends JavaPlugin {
      * 将在 onLoad 方法下关闭插件
      */
     protected static boolean disabled;
-    protected static boolean forge = ILoader.forName("net.minecraftforge.classloading.FMLForgePlugin", false, Plugin.class.getClassLoader()) != null;
+    protected static boolean forge = ILoader.forName("net.minecraftforge.classloading.FMLForgePlugin", false, Plugin.class.getClassLoader()) != null
+            || ILoader.forName("net.minecraftforge.common.MinecraftForge", false, Plugin.class.getClassLoader()) != null;
 
     @Override
     public final void onLoad() {
