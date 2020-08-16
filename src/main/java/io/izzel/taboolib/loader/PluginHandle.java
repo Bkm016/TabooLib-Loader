@@ -48,7 +48,7 @@ public class PluginHandle {
     public static boolean downloadFile() {
         Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
         String[] newVersion = getCurrentVersion();
-        return newVersion != null && IO.downloadFile(newVersion[2], IO.file(Plugin.getTabooLibFile()));
+        return newVersion != null && IO.downloadFile(newVersion[2], IO.file(PluginBase.getTabooLibFile()));
     }
 
     public static boolean isLoaded() {
@@ -56,7 +56,7 @@ public class PluginHandle {
     }
 
     public static double getVersion() {
-        try (ZipFile zipFile = new ZipFile(Plugin.getTabooLibFile())) {
+        try (ZipFile zipFile = new ZipFile(PluginBase.getTabooLibFile())) {
             return NumberConversions.toDouble(IO.readFully(zipFile.getInputStream(zipFile.getEntry("__resources__/version")), StandardCharsets.UTF_8));
         } catch (Throwable t) {
             t.printStackTrace();
@@ -80,7 +80,7 @@ public class PluginHandle {
 
     public static YamlConfiguration getPluginDescription() {
         File file = IO.file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
-        try (ZipFile zipFile = new ZipFile(IO.toFile(Plugin.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file))) {
+        try (ZipFile zipFile = new ZipFile(IO.toFile(PluginBase.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file))) {
             try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
                 return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
             } catch (Throwable t) {
@@ -130,11 +130,11 @@ public class PluginHandle {
 
     public static void LoadPluginMode() {
         try {
-            org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(Plugin.getTabooLibFile());
+            org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(PluginBase.getTabooLibFile());
             plugin.onLoad();
             Bukkit.getPluginManager().enablePlugin(plugin);
         } catch (Throwable t) {
-            Plugin.disabled = true;
+            PluginBase.disabled = true;
             Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
         }
     }

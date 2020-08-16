@@ -1,12 +1,19 @@
 package io.izzel.taboolib.loader.internal;
 
+import org.bukkit.plugin.Plugin;
+
 import java.io.*;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.jar.JarFile;
 
 /**
  * @Author sky
@@ -145,5 +152,33 @@ public class IO {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public static List<Class<?>> getClasses(Class<?> plugin) {
+        return getClasses(plugin, new String[0]);
+    }
+
+    public static List<Class<?>> getClasses(Class<?> plugin, String[] ignore) {
+        List<Class<?>> classes = new CopyOnWriteArrayList<>();
+        URL url = plugin.getProtectionDomain().getCodeSource().getLocation();
+        try {
+            File src;
+            try {
+                src = new File(url.toURI());
+            } catch (URISyntaxException e) {
+                src = new File(url.getPath());
+            }
+            new JarFile(src).stream().filter(entry -> entry.getName().endsWith(".class")).forEach(entry -> {
+                String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
+                try {
+                    if (Arrays.stream(ignore).noneMatch(className::startsWith)) {
+                        classes.add(Class.forName(className, false, plugin.getClassLoader()));
+                    }
+                } catch (Throwable ignored) {
+                }
+            });
+        } catch (Throwable ignored) {
+        }
+        return classes;
     }
 }
