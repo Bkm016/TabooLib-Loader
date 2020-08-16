@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.NumberConversions;
 
 import java.io.*;
+import java.lang.reflect.Field;
 
 /**
  * @Author 坏黑
@@ -230,10 +231,12 @@ public abstract class PluginBase extends JavaPlugin {
         try {
             for (Class<?> c : IO.getClasses(PluginBase.class)) {
                 if (Plugin.class.isAssignableFrom(c) && !Plugin.class.equals(c)) {
-                    try {
-                        main = (Plugin) Reflection.getValue(null, c, true, "INSTANCE");
-                    } catch (Throwable ignored) {
-                        main = (Plugin) Reflection.instantiateObject(c);
+                    Field obj = c.getDeclaredField("INSTANCE");
+                    if (obj != null) {
+                        obj.setAccessible(true);
+                        main = (Plugin) obj.get(c);
+                    } else {
+                        main = (Plugin) c.newInstance();
                     }
                     break;
                 }
