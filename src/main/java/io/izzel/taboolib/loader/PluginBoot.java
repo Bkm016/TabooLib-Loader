@@ -13,73 +13,31 @@ import java.lang.reflect.Method;
  */
 public class PluginBoot extends PluginBase {
 
-    private Object instance;
-    private Method loading;
-    private Method starting;
-    private Method stopping;
-
     @Override
     public void preLoad() {
-        try {
-            try {
-                instance = Reflection.getValue(null, main, true, "INSTANCE");
-            } catch (Throwable ignored) {
-                instance = Reflection.instantiateObject(main);
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        if (instance != null) {
-            Ref.getDeclaredMethods(main).forEach(method -> {
-                if (method.isAnnotationPresent(Plugin.Loading.class)) {
-                    loading = method;
-                    loading.setAccessible(true);
-                } else if (method.isAnnotationPresent(Plugin.Starting.class)) {
-                    starting = method;
-                    loading.setAccessible(true);
-                } else if (method.isAnnotationPresent(Plugin.Stopping.class)) {
-                    stopping = method;
-                    loading.setAccessible(true);
-                }
-            });
-            PluginLoader.redefine(this, instance);
+        if (main != null) {
+            PluginLoader.redefine(this, main);
         }
     }
 
     @Override
     public void onLoading() {
-        if (loading != null) {
-            try {
-                loading.invoke(instance);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+        if (main != null) {
+            main.onLoad();
         }
     }
 
     @Override
     public void onStarting() {
-        if (starting != null) {
-            try {
-                starting.invoke(instance);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+        if (main != null) {
+            main.onEnable();
         }
     }
 
     @Override
     public void onStopping() {
-        if (starting != null) {
-            try {
-                starting.invoke(instance);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+        if (main != null) {
+            main.onDisable();
         }
-    }
-
-    public static PluginBase getPlugin() {
-        return PluginBase.getPlugin();
     }
 }

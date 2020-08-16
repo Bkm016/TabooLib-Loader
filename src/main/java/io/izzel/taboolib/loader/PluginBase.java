@@ -3,6 +3,7 @@ package io.izzel.taboolib.loader;
 import io.izzel.taboolib.PluginLoader;
 import io.izzel.taboolib.loader.internal.ILoader;
 import io.izzel.taboolib.loader.internal.IO;
+import io.izzel.taboolib.util.Reflection;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,7 +28,7 @@ public abstract class PluginBase extends JavaPlugin {
     protected static boolean disabled;
     protected static boolean forge = ILoader.forName("net.minecraftforge.classloading.FMLForgePlugin", false, PluginBase.class.getClassLoader()) != null || ILoader.forName("net.minecraftforge.common.MinecraftForge", false, PluginBase.class.getClassLoader()) != null;
 
-    protected static Class<?> main;
+    protected static Plugin main;
 
     @Override
     public final void onLoad() {
@@ -116,10 +117,6 @@ public abstract class PluginBase extends JavaPlugin {
         return libFile;
     }
 
-    public static Class<?> getMainClass() {
-        return main;
-    }
-
     public static void setDisabled(boolean disabled) {
         PluginBase.disabled = disabled;
     }
@@ -144,7 +141,7 @@ public abstract class PluginBase extends JavaPlugin {
             }
             // 低于 5.19 版本无法在 Kotlin 作为主类的条件下检查更新
             // 低于 5.34 版本无法在 CatServer 服务端下启动
-            double requireVersion = main.getAnnotation(Plugin.class).depend();
+            double requireVersion = main.getTabooLibVersion();
             // 依赖版本高于当前运行版本
             if (requireVersion > version) {
                 disabled = true;
@@ -232,8 +229,16 @@ public abstract class PluginBase extends JavaPlugin {
     static {
         try {
             for (Class<?> c : IO.getClasses(PluginBase.class)) {
-                if (c.isAnnotationPresent(Plugin.class)) {
-                    main = c;
+                if (c.isAssignableFrom(Plugin.class) && !c.equals(Plugin.class)) {
+                    try {
+                        try {
+                            main = (Plugin) Reflection.getValue(null, c, true, "INSTANCE");
+                        } catch (Throwable ignored) {
+                            main = (Plugin) Reflection.instantiateObject(c);
+                        }
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
                     break;
                 }
             }
