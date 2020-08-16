@@ -141,7 +141,7 @@ public abstract class PluginBase extends JavaPlugin {
             }
             // 低于 5.19 版本无法在 Kotlin 作为主类的条件下检查更新
             // 低于 5.34 版本无法在 CatServer 服务端下启动
-            double requireVersion = main.getTabooLibVersion();
+            double requireVersion = main == null ? 5.34 : main.getTabooLibVersion();
             // 依赖版本高于当前运行版本
             if (requireVersion > version) {
                 disabled = true;
@@ -229,15 +229,11 @@ public abstract class PluginBase extends JavaPlugin {
     static {
         try {
             for (Class<?> c : IO.getClasses(PluginBase.class)) {
-                if (c.isAssignableFrom(Plugin.class) && !c.equals(Plugin.class)) {
+                if (Plugin.class.isAssignableFrom(c) && !Plugin.class.equals(c)) {
                     try {
-                        try {
-                            main = (Plugin) Reflection.getValue(null, c, true, "INSTANCE");
-                        } catch (Throwable ignored) {
-                            main = (Plugin) Reflection.instantiateObject(c);
-                        }
-                    } catch (Throwable t) {
-                        t.printStackTrace();
+                        main = (Plugin) Reflection.getValue(null, c, true, "INSTANCE");
+                    } catch (Throwable ignored) {
+                        main = (Plugin) Reflection.instantiateObject(c);
                     }
                     break;
                 }
