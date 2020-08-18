@@ -4,6 +4,7 @@ import io.izzel.taboolib.PluginLoader;
 import io.izzel.taboolib.util.Ref;
 import io.izzel.taboolib.util.Reflection;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -13,31 +14,43 @@ import java.lang.reflect.Method;
  */
 public class PluginBoot extends PluginBase {
 
+    private Plugin instance;
+
     @Override
     public void preLoad() {
         if (main != null) {
-            PluginLoader.redefine(this, main);
+            try {
+                Field obj = main.getDeclaredField("INSTANCE");
+                if (obj != null) {
+                    obj.setAccessible(true);
+                    instance = (Plugin) obj.get(main);
+                } else {
+                    instance = (Plugin) main.newInstance();
+                }
+            } catch (Throwable ignored) {
+            }
+            PluginLoader.redefine(this, instance);
         }
     }
 
     @Override
     public void onLoading() {
-        if (main != null) {
-            main.onLoad();
+        if (instance != null) {
+            instance.onLoad();
         }
     }
 
     @Override
     public void onStarting() {
-        if (main != null) {
-            main.onEnable();
+        if (instance != null) {
+            instance.onEnable();
         }
     }
 
     @Override
     public void onStopping() {
-        if (main != null) {
-            main.onDisable();
+        if (instance != null) {
+            instance.onDisable();
         }
     }
 }

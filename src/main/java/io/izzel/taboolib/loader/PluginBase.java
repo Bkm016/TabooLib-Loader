@@ -29,7 +29,7 @@ public abstract class PluginBase extends JavaPlugin {
     protected static boolean disabled;
     protected static boolean forge = ILoader.forName("net.minecraftforge.classloading.FMLForgePlugin", false, PluginBase.class.getClassLoader()) != null || ILoader.forName("net.minecraftforge.common.MinecraftForge", false, PluginBase.class.getClassLoader()) != null;
 
-    protected static Plugin main;
+    protected static Class<?> main;
 
     @Override
     public final void onLoad() {
@@ -123,6 +123,7 @@ public abstract class PluginBase extends JavaPlugin {
     }
 
     static void init() {
+        YamlConfiguration description = PluginHandle.getPluginDescription();
         // 依赖无效 && 下载失败
         if (!libFile.exists() && !PluginHandle.downloadFile()) {
             disabled = true;
@@ -142,7 +143,7 @@ public abstract class PluginBase extends JavaPlugin {
             }
             // 低于 5.19 版本无法在 Kotlin 作为主类的条件下检查更新
             // 低于 5.34 版本无法在 CatServer 服务端下启动
-            double requireVersion = main == null ? 5.34 : main.getTabooLibVersion();
+            double requireVersion = description == null ? 5.35 : description.getDouble("lib-version");
             // 依赖版本高于当前运行版本
             if (requireVersion > version) {
                 disabled = true;
@@ -210,7 +211,6 @@ public abstract class PluginBase extends JavaPlugin {
                     return;
                 }
             }
-            YamlConfiguration description = PluginHandle.getPluginDescription();
             if (description != null) {
                 Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7当前由 " + description.getString("name") + " 引导主运行库 (" + PluginHandle.getVersion() + ") 启动.");
             }
@@ -231,13 +231,7 @@ public abstract class PluginBase extends JavaPlugin {
         try {
             for (Class<?> c : IO.getClasses(PluginBase.class)) {
                 if (Plugin.class.isAssignableFrom(c) && !Plugin.class.equals(c)) {
-                    Field obj = c.getDeclaredField("INSTANCE");
-                    if (obj != null) {
-                        obj.setAccessible(true);
-                        main = (Plugin) obj.get(c);
-                    } else {
-                        main = (Plugin) c.newInstance();
-                    }
+                    main = c;
                     break;
                 }
             }

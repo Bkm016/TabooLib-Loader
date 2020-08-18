@@ -6,10 +6,6 @@ package io.izzel.taboolib.loader;
  */
 public class Plugin {
 
-    public double getTabooLibVersion() {
-        return 5.34;
-    }
-
     public void onLoad() {
 
     }
