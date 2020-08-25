@@ -1,7 +1,5 @@
 package io.izzel.taboolib.loader.internal;
 
-import org.bukkit.plugin.Plugin;
-
 import java.io.*;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
