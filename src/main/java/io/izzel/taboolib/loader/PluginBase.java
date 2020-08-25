@@ -3,15 +3,13 @@ package io.izzel.taboolib.loader;
 import io.izzel.taboolib.PluginLoader;
 import io.izzel.taboolib.loader.internal.ILoader;
 import io.izzel.taboolib.loader.internal.IO;
-import io.izzel.taboolib.util.Reflection;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.NumberConversions;
 
-import java.io.*;
-import java.lang.reflect.Field;
+import java.io.File;
 
 /**
  * @Author 坏黑
@@ -124,8 +122,20 @@ public abstract class PluginBase extends JavaPlugin {
 
     static void init() {
         YamlConfiguration description = PluginHandle.getPluginDescription();
+        boolean offlineMode = description != null && !description.getBoolean("lib-download", true);
+
+        // 离线模式 手动下载
+        if (offlineMode) {
+            if (!libFile.exists()) {
+                disabled = true;
+                PluginLocale.OFFLINE_FAILED.print();
+                libFile.getParentFile().mkdirs();
+                PluginHandle.sleep(8000L);
+                return;
+            }
+        }
         // 依赖无效 && 下载失败
-        if (!libFile.exists() && !PluginHandle.downloadFile()) {
+        else if (!libFile.exists() && !PluginHandle.downloadFile()) {
             disabled = true;
             PluginLocale.OFFLINE.print();
             PluginHandle.sleep(5000L);
@@ -158,10 +168,10 @@ public abstract class PluginBase extends JavaPlugin {
                 // 如果插件使用不合理的版本则跳过下载防止死循环
                 // 并跳过插件加载
                 if (requireVersion > NumberConversions.toDouble(newVersion[0])) {
-                    Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c无效的依赖版本... " + requireVersion + " > " + NumberConversions.toDouble(newVersion[0]));
+                    Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §cInvalid dependency version... " + requireVersion + " > " + NumberConversions.toDouble(newVersion[0]));
                     return;
                 }
-                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
+                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7Downloading resource file...");
                 if (IO.downloadFile(newVersion[2], IO.file(libFile))) {
                     if (Bukkit.getOnlinePlayers().isEmpty()) {
                         PluginLocale.UPDATE.print();
@@ -178,49 +188,52 @@ public abstract class PluginBase extends JavaPlugin {
         if (forge) {
             // 当 TabooLib 未被加载
             if (Bukkit.getPluginManager().getPlugin("TabooLib5") == null) {
-                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7检测到当前为 Forge 服务端, 主运行库将以插件模式启动.");
+                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7Forge server detected, TabooLib will be loaded as a plugin.");
                 // 将 TabooLib 通过插件方式加载到服务端
                 PluginHandle.LoadPluginMode();
             }
         }
         // 当 TabooLib 未被加载
         else if (!PluginHandle.isLoaded()) {
-            // 检查插件文件
-            PluginHandle.checkPlugins();
-            // 当 TabooLib 存在插件文件夹时
-            if (PluginHandle.getPluginModeFile() != null) {
-                disabled = true;
-                PluginLocale.IN_PLUGINS.print(PluginHandle.getPluginModeFile().getName());
-                PluginHandle.getPluginModeFile().delete();
-                PluginHandle.sleep(5000L);
-                Bukkit.shutdown();
-                return;
-            }
-            // 当 TabooLib 4.X 存在插件文件夹时
-            if (PluginHandle.getPluginOriginFile() != null && !new File("plugins/TabooLib/check").exists()) {
-                double version = NumberConversions.toDouble(PluginHandle.getPluginOriginDescriptionFile().getVersion());
-                // 进行版本检测
-                // 保证 4.X 插件版本兼容 5.X 内置版本
-                if (version > 3.0 && version < 4.92) {
+            if (!offlineMode) {
+                // 检查插件文件
+                PluginHandle.checkPlugins();
+                // 当 TabooLib 存在插件文件夹时
+                if (PluginHandle.getPluginModeFile() != null) {
                     disabled = true;
-                    IO.file(new File("plugins/TabooLib/check"));
-                    IO.downloadFile("https://skymc.oss-cn-shanghai.aliyuncs.com/plugins/TabooLib-4.92.jar", PluginHandle.getPluginOriginFile());
-                    PluginLocale.DOWNLOAD_PLUGIN.print(version, PluginHandle.getPluginOriginFile().getName());
+                    PluginLocale.IN_PLUGINS.print(PluginHandle.getPluginModeFile().getName());
+                    PluginHandle.getPluginModeFile().delete();
                     PluginHandle.sleep(5000L);
                     Bukkit.shutdown();
                     return;
                 }
+                // 当 TabooLib 4.X 存在插件文件夹时
+                if (PluginHandle.getPluginOriginFile() != null && !new File("plugins/TabooLib/check").exists()) {
+                    double version = NumberConversions.toDouble(PluginHandle.getPluginOriginDescriptionFile().getVersion());
+                    // 进行版本检测
+                    // 保证 4.X 插件版本兼容 5.X 内置版本
+                    if (version > 3.0 && version < 4.92) {
+                        disabled = true;
+                        IO.file(new File("plugins/TabooLib/check"));
+                        IO.downloadFile("https://skymc.oss-cn-shanghai.aliyuncs.com/plugins/TabooLib-4.92.jar", PluginHandle.getPluginOriginFile());
+                        PluginLocale.DOWNLOAD_PLUGIN.print(version, PluginHandle.getPluginOriginFile().getName());
+                        PluginHandle.sleep(5000L);
+                        Bukkit.shutdown();
+                        return;
+                    }
+                }
             }
             if (description != null) {
-                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7当前由 " + description.getString("name") + " 引导主运行库 (" + PluginHandle.getVersion() + ") 启动.");
+                Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7Plugin " + description.getString("name") + " is booting TabooLib (" + PluginHandle.getVersion() + ") initiation.");
             }
+
             // 将 TabooLib 通过 Bukkit.class 类加载器加载至内存中供其他插件使用
             // 并保证在热重载过程中不会被 Bukkit 卸载
             ILoader.addPath(libFile);
             // 初始化 TabooLib 主类
             if (ILoader.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader()) == null) {
                 disabled = true;
-                Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
+                Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §cFailed to initialized TabooLib, the plugin will be disabled.");
             }
         }
         // 清理临时文件

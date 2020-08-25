@@ -46,7 +46,7 @@ public class PluginHandle {
     };
 
     public static boolean downloadFile() {
-        Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7正在下载资源文件...");
+        Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7Downloading TabooLib dependency...");
         String[] newVersion = getCurrentVersion();
         return newVersion != null && IO.downloadFile(newVersion[2], IO.file(PluginBase.getTabooLibFile()));
     }
