@@ -1,22 +1,9 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 
-configurations {
-    group = 'io.izzel.taboolib.loader'
-    version = '2.6'
-
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-
-    tasks.build.dependsOn tasks.shadowJar
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-    }
-    
-    defaultTasks 'clean', 'build'
-}
+group = 'io.izzel.taboolib.loader'
+version = '2.7'
 
 repositories {
     maven { url "http://repo.ptms.ink/repository/codemc-nms/" }
@@ -25,8 +12,7 @@ repositories {
 }
 
 dependencies {
-    shadow 'ink.ptms.core:v11500:11500:all'
-    shadow 'io.izzel.taboolib:TabooLib:5.28:all'
-    shadow "org.jetbrains.kotlin:kotlin-stdlib:1.2.41"
-    shadow "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.41"
+    compile 'ink.ptms.core:v11500:11500:all'
+    compile 'io.izzel.taboolib:TabooLib:5.28:all'
+    compile 'org.jetbrains:annotations:19.0.0'
 }

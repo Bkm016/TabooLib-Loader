@@ -3,6 +3,9 @@ package io.izzel.taboolib.loader;
 import io.izzel.taboolib.PluginLoader;
 import io.izzel.taboolib.util.Ref;
 import io.izzel.taboolib.util.Reflection;
+import org.bukkit.generator.ChunkGenerator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -25,11 +28,14 @@ public class PluginBoot extends PluginBase {
                     obj.setAccessible(true);
                     instance = (Plugin) obj.get(main);
                 } else {
-                    instance = (Plugin) main.newInstance();
+                    instance = (Plugin) main.getDeclaredConstructor().newInstance();
                 }
-            } catch (Throwable ignored) {
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
-            PluginLoader.redefine(this, instance);
+            if (instance != null) {
+                PluginLoader.redefine(this, instance);
+            }
         }
     }
 
@@ -52,5 +58,14 @@ public class PluginBoot extends PluginBase {
         if (instance != null) {
             instance.onDisable();
         }
+    }
+
+    @Nullable
+    @Override
+    public ChunkGenerator getDefaultWorldGenerator(@NotNull String worldName, @Nullable String id) {
+        if (instance != null) {
+            return instance.getDefaultWorldGenerator(worldName, id);
+        }
+        return super.getDefaultWorldGenerator(worldName, id);
     }
 }

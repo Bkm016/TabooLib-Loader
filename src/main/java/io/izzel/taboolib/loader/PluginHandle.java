@@ -135,7 +135,7 @@ public class PluginHandle {
             Bukkit.getPluginManager().enablePlugin(plugin);
         } catch (Throwable t) {
             PluginBase.disabled = true;
-            Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §c主运行库未完成初始化, 插件停止加载.");
+            Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §cFailed to initialized TabooLib, the plugin will be disabled.");
         }
     }
 
