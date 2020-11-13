@@ -30,6 +30,7 @@ public class PluginBoot extends PluginBase {
                 } else {
                     instance = (Plugin) main.getDeclaredConstructor().newInstance();
                 }
+            } catch (NoSuchFieldException ignored) {
             } catch (Throwable t) {
                 t.printStackTrace();
             }
