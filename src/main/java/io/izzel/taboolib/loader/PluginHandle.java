@@ -19,8 +19,8 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
 /**
- * @Author sky
- * @Since 2020-04-12 22:43
+ * @author sky
+ * @since 2020-04-12 22:43
  */
 public class PluginHandle {
 

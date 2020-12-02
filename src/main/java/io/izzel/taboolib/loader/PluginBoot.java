@@ -12,8 +12,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * @Author sky
- * @Since 2020-03-08 12:48
+ * @author sky
+ * @since 2020-03-08 12:48
  */
 public class PluginBoot extends PluginBase {
 
@@ -24,13 +24,14 @@ public class PluginBoot extends PluginBase {
         if (main != null) {
             try {
                 Field obj = main.getDeclaredField("INSTANCE");
-                if (obj != null) {
-                    obj.setAccessible(true);
-                    instance = (Plugin) obj.get(main);
-                } else {
-                    instance = (Plugin) main.getDeclaredConstructor().newInstance();
-                }
+                obj.setAccessible(true);
+                instance = (Plugin) obj.get(main);
             } catch (NoSuchFieldException ignored) {
+                try {
+                    instance = (Plugin) main.getDeclaredConstructor().newInstance();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
             }

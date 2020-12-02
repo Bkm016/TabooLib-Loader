@@ -14,8 +14,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarFile;
 
 /**
- * @Author sky
- * @Since 2020-04-12 22:36
+ * @author sky
+ * @since 2020-04-12 22:36
  */
 public class IO {
 

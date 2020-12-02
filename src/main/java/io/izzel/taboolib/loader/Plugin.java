@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @Author sky
- * @Since 2020-08-16 14:06
+ * @author sky
+ * @since 2020-08-16 14:06
  */
 public class Plugin {
 

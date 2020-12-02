@@ -12,8 +12,8 @@ import org.bukkit.util.NumberConversions;
 import java.io.File;
 
 /**
- * @Author 坏黑
- * @Since 2019-07-05 9:03
+ * @author 坏黑
+ * @since 2019-07-05 9:03
  */
 public abstract class PluginBase extends JavaPlugin {
 

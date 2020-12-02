@@ -4,8 +4,8 @@ import io.izzel.taboolib.loader.internal.IO;
 import org.bukkit.Bukkit;
 
 /**
- * @Author sky
- * @Since 2020-04-12 22:28
+ * @author sky
+ * @since 2020-04-12 22:28
  */
 public enum PluginLocale {
 

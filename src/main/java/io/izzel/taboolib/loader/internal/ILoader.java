@@ -14,8 +14,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
- * @Author sky
- * @Since 2020-04-12 22:39
+ * @author sky
+ * @since 2020-04-12 22:39
  */
 public class ILoader extends URLClassLoader {
 
