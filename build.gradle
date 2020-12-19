@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.izzel.taboolib.loader'
-version = '2.8'
+version = '2.9'
 
 repositories {
     maven { url "http://repo.ptms.ink/repository/codemc-nms/" }
