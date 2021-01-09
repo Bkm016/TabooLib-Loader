@@ -1,15 +1,11 @@
 package io.izzel.taboolib.loader;
 
 import io.izzel.taboolib.PluginLoader;
-import io.izzel.taboolib.util.Ref;
-import io.izzel.taboolib.util.Reflection;
 import org.bukkit.generator.ChunkGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 /**
  * @author sky

@@ -20,24 +20,25 @@ import java.net.URLClassLoader;
 public class ILoader extends URLClassLoader {
 
     static MethodHandles.Lookup lookup;
-    static Unsafe UNSAFE;
-
-    static Method ADD_URL_METHOD;
+    static Unsafe unsafe;
+    static Method addUrlMethod;
 
     static {
-        try {
-            ADD_URL_METHOD = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            ADD_URL_METHOD.setAccessible(true);
-        } catch (Throwable ignore) {
+        if (PluginBase.isForge()) {
+            try {
+                addUrlMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+                addUrlMethod.setAccessible(true);
+            } catch (Throwable ignore) {
+            }
         }
         try {
             Field field = Unsafe.class.getDeclaredField("theUnsafe");
             field.setAccessible(true);
-            UNSAFE = (Unsafe) field.get(null);
+            unsafe = (Unsafe) field.get(null);
             Field lookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-            Object lookupBase = UNSAFE.staticFieldBase(lookupField);
-            long lookupOffset = UNSAFE.staticFieldOffset(lookupField);
-            lookup = (MethodHandles.Lookup) UNSAFE.getObject(lookupBase, lookupOffset);
+            Object lookupBase = unsafe.staticFieldBase(lookupField);
+            long lookupOffset = unsafe.staticFieldOffset(lookupField);
+            lookup = (MethodHandles.Lookup) unsafe.getObject(lookupBase, lookupOffset);
         } catch (Throwable ignore) {
         }
     }
@@ -56,14 +57,14 @@ public class ILoader extends URLClassLoader {
         try {
             ClassLoader loader = Bukkit.class.getClassLoader();
             if (PluginBase.isForge()) {
-                ADD_URL_METHOD.invoke(loader, file.toURI().toURL());
-            } else if ("LaunchClassLoader".equals(loader.getClass().getSimpleName())) {
+                addUrlMethod.invoke(loader, file.toURI().toURL());
+            } else if (loader.getClass().getSimpleName().equals("LaunchClassLoader")) {
                 MethodHandle methodHandle = lookup.findVirtual(loader.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));
                 methodHandle.invoke(loader, file.toURI().toURL());
             } else {
                 Field ucpField = loader.getClass().getDeclaredField("ucp");
-                long ucpOffset = UNSAFE.objectFieldOffset(ucpField);
-                Object ucp = UNSAFE.getObject(loader, ucpOffset);
+                long ucpOffset = unsafe.objectFieldOffset(ucpField);
+                Object ucp = unsafe.getObject(loader, ucpOffset);
                 MethodHandle methodHandle = lookup.findVirtual(ucp.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));
                 methodHandle.invoke(ucp, file.toURI().toURL());
             }
