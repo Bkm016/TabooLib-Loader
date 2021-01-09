@@ -5,6 +5,9 @@ plugins {
 group = 'io.izzel.taboolib.loader'
 version = '2.10'
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 repositories {
     maven { url "http://repo.ptms.ink/repository/codemc-nms/" }
     maven { url "http://repo.ptms.ink/repository/maven-releases/" }
