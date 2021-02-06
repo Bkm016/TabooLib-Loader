@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.izzel.taboolib.loader'
-version = '2.10'
+version = '2.11'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    compile 'ink.ptms.core:v11500:11500:all'
-    compile 'io.izzel.taboolib:TabooLib:5.45:all'
-    compile 'org.jetbrains:annotations:19.0.0'
+    implementation 'io.izzel.taboolib:TabooLib:5.53:all'
+    implementation 'ink.ptms.core:v11500:11500:all'
+    implementation 'org.jetbrains:annotations:19.0.0'
 }

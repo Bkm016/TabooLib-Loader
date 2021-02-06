@@ -1,7 +1,12 @@
 package io.izzel.taboolib.loader;
 
-import io.izzel.taboolib.loader.internal.IO;
+import io.izzel.taboolib.loader.util.IO;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * @author sky
@@ -9,95 +14,50 @@ import org.bukkit.Bukkit;
  */
 public enum PluginLocale {
 
-    OFFLINE(
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### ERROR ####################",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Failed to initialize §4TabooLib §c!",
-            "§4[TabooLib] §c  Unable to obtain version info or an error occurred while downloading.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Please check if the server’s internet connection is valid.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### ERROR ####################",
-            "§4[TabooLib] §c"
-    ),
+    LOAD_NO_INTERNAL,
 
-    OFFLINE_FAILED(
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### ERROR ####################",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Failed to initialize §4TabooLib §c!",
-            "§4[TabooLib] §c  Please install it manually by following the instructions.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Download §4TabooLib.jar§c and copy to §4/libs/TabooLib.jar.",
-            "§4[TabooLib] §c  https://tabooproject.org",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### ERROR ####################",
-            "§4[TabooLib] §c"
-    ),
+    LOAD_OFFLINE,
 
-    UPDATE(
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Failed to initialize §4TabooLib §c!",
-            "§4[TabooLib] §c  The current version is outdated to plugin required.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  The latest version has been downloaded.",
-            "§4[TabooLib] §c  The server will restart in 5 seconds.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c"
-    ),
+    LOAD_OUTDATED,
 
-    UPDATE_WAIT(
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Failed to initialize §4TabooLib §c!",
-            "§4[TabooLib] §c  The current version is outdated to plugin required.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  The latest version has been downloaded.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c"
-    ),
+    LOAD_OUTDATED_NO_RESTART,
 
-    IN_PLUGINS(
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Please do not put §4TabooLib 5.0§c into the plugins folder.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Deleted §4{0}",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c"
-    ),
+    LOAD_IN_PLUGINS,
 
-    DOWNLOAD_PLUGIN(
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Failed to initialize §4TabooLib §c!",
-            "§4[TabooLib] §c  Not compatible with §4TabooLib {0} §c.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c  Updated §4{1}",
-            "§4[TabooLib] §c  The server will restart in 5 seconds.",
-            "§4[TabooLib] §c",
-            "§4[TabooLib] §c#################### WARNING ####################",
-            "§4[TabooLib] §c"
-    );
+    LOAD_COMPAT_MODE,
 
-    String[] message;
+    LOAD_COMPAT_MODE_UPDATE,
 
-    PluginLocale(String... message) {
-        this.message = message;
+    LOAD_FORGE_MODE,
+
+    LOAD_FAILED,
+
+    LOAD_INVALID_VERSION,
+
+    LOAD_DOWNLOAD,
+
+    LOAD_SUCCESS;
+
+    static FileConfiguration locale;
+
+    static {
+        try (InputStream inputStream = PluginLocale.class.getClassLoader().getResourceAsStream("taboolib-loader.yml")) {
+            locale = new YamlConfiguration();
+            locale.loadFromString(IO.readFully(Objects.requireNonNull(inputStream)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public void print(Object... args) {
-        for (String it : message) {
-            Bukkit.getConsoleSender().sendMessage(IO.replaceWithOrder(it, args));
+    public void info(Object... args) {
+        for (String message : locale.getStringList(name().toLowerCase().replace("_", "-"))) {
+            Bukkit.getLogger().info(IO.replaceWithOrder(message, args));
+        }
+    }
+
+    public void warn(Object... args) {
+        for (String message : locale.getStringList(name().toLowerCase().replace("_", "-"))) {
+            Bukkit.getLogger().warning(IO.replaceWithOrder(message, args));
         }
     }
 }

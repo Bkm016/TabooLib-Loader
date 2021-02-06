@@ -27,7 +27,11 @@ public class Plugin {
         return null;
     }
 
-    public PluginBase getPlugin() {
-        return PluginBoot.getPlugin();
+    public PluginBoot getPlugin() {
+        return PluginBoot.getPluginBase();
+    }
+
+    public static Plugin getInstance() {
+        return PluginBoot.getPluginInstance();
     }
 }

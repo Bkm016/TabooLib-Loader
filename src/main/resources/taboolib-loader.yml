@@ -1,0 +1,43 @@
+load-no-internet:
+  - '**** THE SERVER IS RUNNING ON NO INTERNET ENVIRONMENT ****'
+  - 'The {0} will be skipped loading, check your internet connection and try again.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-offline:
+  - '**** THE TABOOLIB LOADER IS RUNNING ON OFFLINE MODE ****'
+  - 'The {0} will be skipped loading, refer the manual on {0}''s home page to install Taboolib.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-outdated:
+  - '**** THE SERVER IS RUNNING AN OUTDATED VERSION OF TABOOLIB ****'
+  - 'The TabooLib has been updated and the server will be restarted in 5 seconds.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-outdated-no-restart:
+  - '**** THE SERVER IS RUNNING AN OUTDATED VERSION OF TABOOLIB ****'
+  - 'The TabooLib has been updated and the {0} will be skipped loading.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-in-plugins:
+  - '**** THE SERVER IS RUNNING A WRONG PATH OF TABOOLIB ****'
+  - 'The TabooLib 5.0+ cannot be loaded in the plugins folder.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-compat-mode:
+  - '**** THE TABOOLIB IS RUNNING ON COMPATIBILITY MODE ****'
+  - 'The TabooLib 5.0+ will stop being compatible with {0} when Minecraft 1.17 is released.'
+  - 'The {1} is currently based on {0}, update as soon as possible.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-compat-mode-update:
+  - '**** THE TABOOLIB IS RUNNING ON COMPATIBILITY MODE ****'
+  - 'The {0} has been forced to update and the server will be restarted in 5 seconds.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-forge-mode:
+  - '**** THE TABOOLIB IS RUNNING ON COMPATIBILITY MODE ****'
+  - 'The Forge environment detected, TabooLib will be loaded as a plugin.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-failed:
+  - '**** THE TABOOLIB COULD NOT BE LOADED ****'
+  - 'The {0} will be skipped loading, your environment is not supported.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-invalid-version:
+  - 'The {0} based on TabooLib {1} but the latest version is {2}, skipped.'
+load-download:
+  - 'Loading TabooLib, please wait...'
+load-success:
+  - 'The server is running TabooLib {0}, booting by {1}.'

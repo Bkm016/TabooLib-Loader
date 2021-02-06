@@ -2,9 +2,10 @@ package io.izzel.taboolib.loader;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import io.izzel.taboolib.loader.internal.ILoader;
-import io.izzel.taboolib.loader.internal.IO;
+import io.izzel.taboolib.loader.util.ILoader;
+import io.izzel.taboolib.loader.util.IO;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.NumberConversions;
@@ -12,7 +13,9 @@ import org.bukkit.util.NumberConversions;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -22,12 +25,17 @@ import java.util.zip.ZipFile;
  * @author sky
  * @since 2020-04-12 22:43
  */
+@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 public class PluginHandle {
 
     private static File pluginModeFile;
     private static File pluginOriginFile;
     private static PluginDescriptionFile pluginModeDescriptionFile;
     private static PluginDescriptionFile pluginOriginDescriptionFile;
+
+    private static final List<String> legacy = new ArrayList<>();
+
+    private static double tabooLibVersion = -1;
 
     /**
      * 版本信息获取地址
@@ -46,9 +54,10 @@ public class PluginHandle {
     };
 
     public static boolean downloadFile() {
-        Bukkit.getConsoleSender().sendMessage("§f[TabooLib] §7Downloading TabooLib dependency...");
+        tabooLibVersion = -1;
+        PluginLocale.LOAD_DOWNLOAD.info();
         String[] newVersion = getCurrentVersion();
-        return newVersion != null && IO.downloadFile(newVersion[2], IO.file(PluginBase.getTabooLibFile()));
+        return newVersion != null && IO.downloadFile(newVersion[2], IO.file(PluginBoot.getTabooLibFile()));
     }
 
     public static boolean isLoaded() {
@@ -56,17 +65,20 @@ public class PluginHandle {
     }
 
     public static double getVersion() {
-        try (ZipFile zipFile = new ZipFile(PluginBase.getTabooLibFile())) {
-            return NumberConversions.toDouble(IO.readFully(zipFile.getInputStream(zipFile.getEntry("__resources__/version")), StandardCharsets.UTF_8));
+        if (tabooLibVersion != -1) {
+            return tabooLibVersion;
+        }
+        try (ZipFile zipFile = new ZipFile(PluginBoot.getTabooLibFile())) {
+            tabooLibVersion = NumberConversions.toDouble(IO.readFully(zipFile.getInputStream(zipFile.getEntry("__resources__/version"))));
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        return -1;
+        return tabooLibVersion;
     }
 
     public static String[] getCurrentVersion() {
         for (String[] url : URL) {
-            String read = IO.readFromURL(url[0]);
+            String read = IO.readFromURL(url[0], "{}");
             try {
                 JsonObject jsonObject = new JsonParser().parse(read).getAsJsonObject();
                 if (jsonObject.has("tag_name")) {
@@ -78,9 +90,9 @@ public class PluginHandle {
         return null;
     }
 
-    public static YamlConfiguration getPluginDescription() {
+    public static FileConfiguration getPluginDescription() {
         File file = IO.file(new File("plugins/TabooLib/temp/" + UUID.randomUUID()));
-        try (ZipFile zipFile = new ZipFile(IO.toFile(PluginBase.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file))) {
+        try (ZipFile zipFile = new ZipFile(IO.toFile(PluginBoot.class.getProtectionDomain().getCodeSource().getLocation().openStream(), file))) {
             try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
                 return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
             } catch (Throwable t) {
@@ -92,30 +104,12 @@ public class PluginHandle {
         return null;
     }
 
-    public static YamlConfiguration getPluginDescription(File file) {
-        YamlConfiguration conf = new YamlConfiguration();
-        try (JarFile jar = new JarFile(file)) {
-            JarEntry entry = jar.getJarEntry("plugin.yml");
-            if (entry == null) {
-                return conf;
-            }
-            try (InputStream stream = jar.getInputStream(entry)) {
-                conf.loadFromString(IO.readFully(stream, StandardCharsets.UTF_8));
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return conf;
-    }
-
     public static PluginDescriptionFile getPluginDescriptionFile(File file) {
         PluginDescriptionFile descriptionFile = null;
         try (JarFile jar = new JarFile(file)) {
             JarEntry entry = jar.getJarEntry("plugin.yml");
             if (entry == null) {
-                return descriptionFile;
+                return null;
             }
             try (InputStream stream = jar.getInputStream(entry)) {
                 descriptionFile = new PluginDescriptionFile(stream);
@@ -130,12 +124,14 @@ public class PluginHandle {
 
     public static void LoadPluginMode() {
         try {
-            org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(PluginBase.getTabooLibFile());
-            plugin.onLoad();
-            Bukkit.getPluginManager().enablePlugin(plugin);
+            org.bukkit.plugin.Plugin plugin = Bukkit.getPluginManager().loadPlugin(PluginBoot.getTabooLibFile());
+            if (plugin != null) {
+                plugin.onLoad();
+                Bukkit.getPluginManager().enablePlugin(plugin);
+            }
         } catch (Throwable t) {
-            PluginBase.disabled = true;
-            Bukkit.getConsoleSender().sendMessage("§4[TabooLib] §cFailed to initialized TabooLib, the plugin will be disabled.");
+            PluginBoot.setDisabled(true);
+            t.printStackTrace();
         }
     }
 
@@ -158,12 +154,15 @@ public class PluginHandle {
                     pluginModeDescriptionFile = desc;
                     break;
             }
+            if (desc.getDepend().contains("TabooLib")) {
+                legacy.add(desc.getName());
+            }
         }
     }
 
     public static Class<?> getMainClass(String node) {
         try {
-            return Class.forName(getPluginDescription().getString(node));
+            return Class.forName(Objects.requireNonNull(getPluginDescription()).getString(node));
         } catch (NoClassDefFoundError ignored) {
         } catch (Throwable t) {
             t.printStackTrace();
@@ -195,5 +194,9 @@ public class PluginHandle {
 
     public static PluginDescriptionFile getPluginOriginDescriptionFile() {
         return pluginOriginDescriptionFile;
+    }
+
+    public static List<String> getLegacy() {
+        return legacy;
     }
 }

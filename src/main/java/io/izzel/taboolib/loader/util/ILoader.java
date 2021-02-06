@@ -1,6 +1,6 @@
-package io.izzel.taboolib.loader.internal;
+package io.izzel.taboolib.loader.util;
 
-import io.izzel.taboolib.loader.PluginBase;
+import io.izzel.taboolib.loader.PluginBoot;
 import org.bukkit.Bukkit;
 import sun.misc.Unsafe;
 
@@ -24,7 +24,7 @@ public class ILoader extends URLClassLoader {
     static Method addUrlMethod;
 
     static {
-        if (PluginBase.isForge()) {
+        if (PluginBoot.isForge()) {
             try {
                 addUrlMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
                 addUrlMethod.setAccessible(true);
@@ -56,7 +56,7 @@ public class ILoader extends URLClassLoader {
     public static void addPath(File file) {
         try {
             ClassLoader loader = Bukkit.class.getClassLoader();
-            if (PluginBase.isForge()) {
+            if (PluginBoot.isForge()) {
                 addUrlMethod.invoke(loader, file.toURI().toURL());
             } else if (loader.getClass().getSimpleName().equals("LaunchClassLoader")) {
                 MethodHandle methodHandle = lookup.findVirtual(loader.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));

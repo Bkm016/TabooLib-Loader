@@ -1,15 +1,12 @@
-package io.izzel.taboolib.loader.internal;
+package io.izzel.taboolib.loader.util;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarFile;
 
@@ -19,31 +16,23 @@ import java.util.jar.JarFile;
  */
 public class IO {
 
-    public static String readFully(InputStream inputStream, Charset charset) throws IOException {
-        return new String(readFully(inputStream), charset);
-    }
-
-    public static byte[] readFully(InputStream inputStream) throws IOException {
+    public static String readFully(InputStream inputStream) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         byte[] buf = new byte[1024];
-        int len = 0;
+        int len;
         while ((len = inputStream.read(buf)) > 0) {
             stream.write(buf, 0, len);
         }
-        return stream.toByteArray();
+        return stream.toString("UTF-8");
     }
 
     public static String readFromURL(String in, String def) {
-        return Optional.ofNullable(readFromURL(in)).orElse(def);
-    }
-
-    public static String readFromURL(String in) {
         try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
-            return new String(readFully(bufferedInputStream));
+            return readFully(bufferedInputStream);
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        return null;
+        return def;
     }
 
     public static boolean downloadFile(String in, File file) {
@@ -54,15 +43,6 @@ public class IO {
             t.printStackTrace();
         }
         return false;
-    }
-
-    public static File toFile(String in, File file) {
-        try (FileWriter fileWriter = new FileWriter(file); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-            bufferedWriter.write(in);
-            bufferedWriter.flush();
-        } catch (Exception ignored) {
-        }
-        return file;
     }
 
     public static File toFile(InputStream inputStream, File file) {
@@ -78,6 +58,15 @@ public class IO {
         return file;
     }
 
+    public static void copy(File file1, File file2) {
+        try (FileInputStream fileIn = new FileInputStream(file1); FileOutputStream fileOut = new FileOutputStream(file2); FileChannel channelIn = fileIn.getChannel(); FileChannel channelOut = fileOut.getChannel()) {
+            channelIn.transferTo(0, channelIn.size(), channelOut);
+        } catch (IOException t) {
+            t.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static File file(File file) {
         if (!file.exists()) {
             folder(file);
@@ -90,6 +79,7 @@ public class IO {
         return file;
     }
 
+    @SuppressWarnings({"UnusedReturnValue", "ResultOfMethodCallIgnored"})
     public static File folder(File file) {
         if (!file.exists()) {
             String filePath = file.getPath();
@@ -103,6 +93,7 @@ public class IO {
         return file;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void deepDelete(File file) {
         if (!file.exists()) {
             return;
@@ -115,22 +106,6 @@ public class IO {
             deepDelete(file1);
         }
         file.delete();
-    }
-
-    public static String getFileMD5(File file) {
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = fileInputStream.read(buffer, 0, 1024)) != -1) {
-                digest.update(buffer, 0, length);
-            }
-            byte[] md5Bytes = digest.digest();
-            return new BigInteger(1, md5Bytes).toString(16);
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return "";
     }
 
     public static String replaceWithOrder(String template, Object... args) {
