@@ -38,10 +38,6 @@ public class PluginBoot extends JavaPlugin {
             setEnabled(false);
             return;
         }
-        if (TabooLibAPI.getTPS()[0] > 0 && !pluginInstance.allowHotswap()) {
-            setEnabled(false);
-            return;
-        }
         pluginBoot = this;
         try {
             pluginInstance = (Plugin) Reflection.getValue(mainClass, mainClass, true, "INSTANCE");
@@ -55,6 +51,11 @@ public class PluginBoot extends JavaPlugin {
             t.printStackTrace();
         }
         if (pluginInstance != null) {
+            // 热重载检测
+            if (TabooLibAPI.getTPS()[0] > 0 && !pluginInstance.allowHotswap()) {
+                setEnabled(false);
+                return;
+            }
             PluginLoader.redefine(this, pluginInstance);
         }
         PluginLoader.addPlugin(this);
