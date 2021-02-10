@@ -1,6 +1,7 @@
 package io.izzel.taboolib.loader;
 
 import io.izzel.taboolib.PluginLoader;
+import io.izzel.taboolib.TabooLibAPI;
 import io.izzel.taboolib.loader.util.ILoader;
 import io.izzel.taboolib.loader.util.IO;
 import io.izzel.taboolib.util.Reflection;
@@ -34,6 +35,10 @@ public class PluginBoot extends JavaPlugin {
     @Override
     public final void onLoad() {
         if (isDisabled) {
+            setEnabled(false);
+            return;
+        }
+        if (TabooLibAPI.getTPS()[0] > 0 && !pluginInstance.allowHotswap()) {
             setEnabled(false);
             return;
         }

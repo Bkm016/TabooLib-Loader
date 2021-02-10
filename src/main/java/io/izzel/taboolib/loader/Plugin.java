@@ -22,6 +22,10 @@ public class Plugin {
 
     }
 
+    public boolean allowHotswap() {
+        return true;
+    }
+
     @Nullable
     public ChunkGenerator getDefaultWorldGenerator(@NotNull String worldName, @Nullable String id) {
         return null;

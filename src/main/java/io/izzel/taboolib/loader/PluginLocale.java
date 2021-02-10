@@ -32,6 +32,8 @@ public enum PluginLocale {
 
     LOAD_FAILED,
 
+    LOAD_HOTSWAP_DISABLE,
+
     LOAD_INVALID_VERSION,
 
     LOAD_DOWNLOAD,

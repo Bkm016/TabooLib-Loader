@@ -35,6 +35,10 @@ load-failed:
   - '**** THE TABOOLIB COULD NOT BE LOADED ****'
   - 'The {0} will be skipped loading, your environment is not supported.'
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
+load-hotswap-disable:
+  - '**** THE {0} IS LOADING BY HOT SWAP ****'
+  - 'The {1} will be skipped loading, restart your server and try again.'
+  - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-invalid-version:
   - 'The {0} based on TabooLib {1} but the latest version is {2}, skipped.'
 load-download:

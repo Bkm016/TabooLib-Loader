@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.izzel.taboolib.loader'
-version = '2.11'
+version = '2.12'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
