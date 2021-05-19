@@ -53,7 +53,7 @@ public class ILoader extends URLClassLoader {
      * 请在执行前判断是否已经被读取
      * 防止出现未知错误
      */
-    public static void addPath(File file) {
+    public static boolean addPath(File file) {
         try {
             ClassLoader loader = Bukkit.class.getClassLoader();
             if (PluginBoot.isForge()) {
@@ -62,15 +62,22 @@ public class ILoader extends URLClassLoader {
                 MethodHandle methodHandle = lookup.findVirtual(loader.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));
                 methodHandle.invoke(loader, file.toURI().toURL());
             } else {
-                Field ucpField = loader.getClass().getDeclaredField("ucp");
+                Field ucpField;
+                try {
+                    ucpField = loader.getClass().getDeclaredField("ucp");
+                } catch (NoSuchFieldError e) {
+                    ucpField = loader.getClass().getSuperclass().getDeclaredField("ucp");
+                }
                 long ucpOffset = unsafe.objectFieldOffset(ucpField);
                 Object ucp = unsafe.getObject(loader, ucpOffset);
                 MethodHandle methodHandle = lookup.findVirtual(ucp.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));
                 methodHandle.invoke(ucp, file.toURI().toURL());
             }
+            return true;
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        return false;
     }
 
     public static Class<?> forName(String name, boolean initialize, ClassLoader loader) {

@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.izzel.taboolib:TabooLib:5.53:all'
+    implementation 'io.izzel.taboolib:TabooLib:5.62:all'
     implementation 'ink.ptms.core:v11500:11500:all'
     implementation 'org.jetbrains:annotations:19.0.0'
 }

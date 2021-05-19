@@ -265,10 +265,14 @@ public class PluginBoot extends JavaPlugin {
             }
             // 将 TabooLib 通过 Bukkit.class 类加载器加载至内存中供其他插件使用
             // 并保证在热重载过程中不会被 Bukkit 卸载
-            ILoader.addPath(tabooLibFile);
-            // 初始化 TabooLib 主类
-            if (ILoader.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader()) != null) {
-                PluginLocale.LOAD_SUCCESS.info(PluginHandle.getVersion(), name);
+            if (ILoader.addPath(tabooLibFile)) {
+                // 初始化 TabooLib 主类
+                if (ILoader.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader()) != null) {
+                    PluginLocale.LOAD_SUCCESS.info(PluginHandle.getVersion(), name);
+                } else {
+                    isDisabled = true;
+                    PluginLocale.LOAD_FAILED.warn(name);
+                }
             } else {
                 isDisabled = true;
                 PluginLocale.LOAD_FAILED.warn(name);
