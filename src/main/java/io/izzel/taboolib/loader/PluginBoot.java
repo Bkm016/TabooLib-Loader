@@ -1,5 +1,7 @@
 package io.izzel.taboolib.loader;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.izzel.taboolib.PluginLoader;
 import io.izzel.taboolib.TabooLibAPI;
 import io.izzel.taboolib.loader.util.ILoader;
@@ -7,13 +9,22 @@ import io.izzel.taboolib.loader.util.IO;
 import io.izzel.taboolib.util.Reflection;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.zip.ZipFile;
 
 /**
  * @author 坏黑
@@ -21,49 +32,79 @@ import java.io.File;
  */
 public class PluginBoot extends JavaPlugin {
 
-    protected static File tabooLibFile = new File("libs/TabooLib.jar");
+    public static String URL;
 
     protected static Class<?> mainClass;
 
-    protected static PluginBoot pluginBoot;
-    protected static Plugin pluginInstance;
+    protected static Plugin plugin;
 
-    protected static boolean isDisabled;
-    protected static boolean isForge = ILoader.forName("net.minecraftforge.classloading.FMLForgePlugin", false, PluginBoot.class.getClassLoader()) != null
-            || ILoader.forName("net.minecraftforge.common.MinecraftForge", false, PluginBoot.class.getClassLoader()) != null;
+    protected static PluginBoot pluginBoot;
+
+    protected static PluginFile pluginFile;
+
+    protected static final boolean forgeBase;
+
+    protected static final File tabooLibFile;
+
+    protected static Version tabooLibVersion;
+
+    protected static boolean enableBoot = true;
+
+    protected static final Map<String, PluginFile> outdatedPlugins;
+
+    protected static final Map<PluginFile.Type, PluginFile> checkedPlugins;
+
+    static {
+        URL = "https://skymc.oss-cn-shanghai.aliyuncs.com/taboolib/version.json";
+        forgeBase = ILoader.isExists("net.minecraftforge.classloading.FMLForgePlugin") || ILoader.isExists("net.minecraftforge.common.MinecraftForge");
+        tabooLibFile = new File("libs/TabooLib.jar");
+        checkedPlugins = new HashMap<>();
+        outdatedPlugins = new HashMap<>();
+        try {
+            for (Class<?> clazz : IO.getClasses(PluginBoot.class)) {
+                if (Plugin.class.isAssignableFrom(clazz) && !Plugin.class.equals(clazz)) {
+                    mainClass = clazz;
+                    break;
+                }
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        try {
+            initialize();
+        } catch (Throwable t) {
+            enableBoot = false;
+            t.printStackTrace();
+        }
+    }
 
     @Override
     public final void onLoad() {
-        if (isDisabled) {
-            setEnabled(false);
+        if (!enableBoot) {
             return;
         }
-        pluginBoot = this;
         try {
-            pluginInstance = (Plugin) Reflection.getValue(mainClass, mainClass, true, "INSTANCE");
+            pluginBoot = this;
+            plugin = (Plugin) Reflection.getValue(mainClass, mainClass, true, "INSTANCE");
         } catch (NoSuchFieldException ignored) {
             try {
-                pluginInstance = (Plugin) Reflection.instantiateObject(mainClass);
+                plugin = (Plugin) Reflection.instantiateObject(mainClass);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        if (pluginInstance != null) {
-            // 热重载检测
-            if (TabooLibAPI.getTPS()[0] > 0 && !pluginInstance.allowHotswap()) {
-                setEnabled(false);
-                return;
-            }
-            PluginLoader.redefine(this, pluginInstance);
+        if (plugin == null || (TabooLibAPI.getTPS()[0] > 0 && !plugin.allowHotswap())) {
+            enableBoot = false;
+            PluginLocale.LOAD_FAILED.warn(pluginBoot.getName());
+            return;
         }
+        PluginLoader.redefine(this, plugin);
         PluginLoader.addPlugin(this);
         PluginLoader.load(this);
         try {
-            if (pluginInstance != null) {
-                pluginInstance.onLoad();
-            }
+            plugin.onLoad();
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -71,48 +112,36 @@ public class PluginBoot extends JavaPlugin {
 
     @Override
     public final void onEnable() {
-        if (isDisabled) {
+        if (!enableBoot) {
             return;
         }
         PluginLoader.start(this);
         try {
-            if (pluginInstance != null) {
-                pluginInstance.onEnable();
-            }
+            plugin.onEnable();
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        Bukkit.getScheduler().runTask(this, () -> PluginLoader.active(this));
+        Bukkit.getScheduler().runTask(this, () -> {
+            PluginLoader.active(PluginBoot.this);
+            try {
+                plugin.onActive();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        });
     }
 
     @Override
     public final void onDisable() {
-        if (isDisabled) {
+        if (!enableBoot) {
             return;
         }
         try {
-            if (pluginInstance != null) {
-                pluginInstance.onDisable();
-            }
+            plugin.onDisable();
         } catch (Throwable t) {
             t.printStackTrace();
         }
         PluginLoader.stop(this);
-    }
-
-    @Nullable
-    @Override
-    public final ChunkGenerator getDefaultWorldGenerator(@NotNull String worldName, @Nullable String id) {
-        if (pluginInstance != null) {
-            return pluginInstance.getDefaultWorldGenerator(worldName, id);
-        }
-        return super.getDefaultWorldGenerator(worldName, id);
-    }
-
-    @Deprecated
-    @Override
-    public final FileConfiguration getConfig() {
-        return super.getConfig();
     }
 
     @NotNull
@@ -121,41 +150,36 @@ public class PluginBoot extends JavaPlugin {
         return super.getFile();
     }
 
-    public static File getTabooLibFile() {
-        return tabooLibFile;
+    @Deprecated
+    @Override
+    public final FileConfiguration getConfig() {
+        return super.getConfig();
     }
 
-    public static PluginBoot getPluginBase() {
-        return pluginBoot;
+    @Nullable
+    @Override
+    public final ChunkGenerator getDefaultWorldGenerator(@NotNull String worldName, @Nullable String id) {
+        if (plugin != null) {
+            return plugin.getDefaultWorldGenerator(worldName, id);
+        } else {
+            return super.getDefaultWorldGenerator(worldName, id);
+        }
     }
 
-    public static Plugin getPluginInstance() {
-        return pluginInstance;
-    }
-
-    public static boolean isForge() {
-        return isForge;
-    }
-
-    public static boolean isDisabled() {
-        return isDisabled;
-    }
-
-    public static void setDisabled(boolean disabled) {
-        PluginBoot.isDisabled = disabled;
-    }
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void init() {
-        FileConfiguration description = PluginHandle.getPluginDescription();
-        // 文件有效性
-        if (description == null) {
-            File file = new File(PluginBoot.class.getProtectionDomain().getCodeSource().getLocation().getFile());
-            PluginLocale.LOAD_FAILED.warn(file.getName() + " (JVM)");
+    static void initialize() {
+        // 检查插件
+        File file = new File(PluginBoot.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        try (ZipFile zip = new ZipFile(file); InputStream stream = zip.getInputStream(zip.getEntry("plugin.yml"))) {
+            String readFully = IO.readFully(stream);
+            pluginFile = new PluginFile(file, new PluginDescriptionFile(new ByteArrayInputStream(readFully.getBytes(StandardCharsets.UTF_8))), readFully);
+            checkedPlugins.put(PluginFile.Type.SELF, pluginFile);
+        } catch (Throwable e) {
+            enableBoot = false;
+            e.printStackTrace();
             return;
         }
-        String name = description.getString("name");
-
+        // 插件名称
+        String name = pluginFile.getName();
         // 文件不存在
         if (!tabooLibFile.exists()) {
             // 防呆模式
@@ -163,104 +187,96 @@ public class PluginBoot extends JavaPlugin {
             if (wrong.exists()) {
                 IO.copy(wrong, IO.file(tabooLibFile));
                 wrong.delete();
-            } else {
-                // 离线模式
-                if (!description.getBoolean("lib-download", true)) {
-                    isDisabled = true;
-                    PluginLocale.LOAD_OFFLINE.warn(name);
-                    return;
-                }
-                // 下载文件失败
-                if (!PluginHandle.downloadFile()) {
-                    isDisabled = true;
-                    PluginLocale.LOAD_NO_INTERNAL.warn(name);
-                    return;
-                }
+            }
+            // 下载失败
+            else if (!downloadTabooLib(null, false)) {
+                enableBoot = false;
+                return;
             }
         }
-
         // 版本检查
-        double version = PluginHandle.getVersion();
+        Version version = getTabooLibVersion();
         // 版本无效 && 下载失败
-        if (version == -1 && !PluginHandle.downloadFile()) {
-            isDisabled = true;
-            PluginLocale.LOAD_NO_INTERNAL.warn(name);
+        if (version == null && !downloadTabooLib(null, false)) {
+            enableBoot = false;
             return;
         }
-
         // 低于 5.19 版本无法在 Kotlin 作为主类的条件下检查更新
         // 低于 5.34 版本无法在 CatServer 服务端下启动
-        double requireVersion = description.getDouble("lib-version", 5.35);
+        Version dependVersion = new Version(Objects.requireNonNull(pluginFile.getFileConfiguration().getString("lib-version")));
         // 依赖版本高于当前运行版本
-        if (requireVersion > version) {
-            isDisabled = true;
+        if (dependVersion.isAfter(version)) {
+            enableBoot = false;
             // 获取版本信息
-            String[] newVersion = PluginHandle.getCurrentVersion();
-            if (newVersion == null) {
+            Info information = getTabooLibInformation();
+            if (information == null) {
                 PluginLocale.LOAD_NO_INTERNAL.warn(name);
                 return;
             }
             // 检查依赖版本是否合理
             // 如果插件使用不合理的版本则跳过下载防止死循环
             // 并跳过插件加载
-            if (requireVersion > NumberConversions.toDouble(newVersion[0])) {
-                PluginLocale.LOAD_INVALID_VERSION.warn(name, requireVersion, newVersion[0]);
+            if (dependVersion.isAfter(information.getVersion())) {
+                PluginLocale.LOAD_INVALID_VERSION.warn(name, dependVersion, information.getVersion().getSource());
                 return;
             }
-            // 下载更新
-            PluginLocale.LOAD_DOWNLOAD.info();
-            if (IO.downloadFile(newVersion[2], IO.file(tabooLibFile))) {
-                // 服务器服务器没人则重启
-                if (Bukkit.getOnlinePlayers().isEmpty()) {
-                    PluginLocale.LOAD_OUTDATED.warn();
-                    PluginHandle.sleep(5000L);
-                    Bukkit.shutdown();
-                } else {
-                    PluginLocale.LOAD_OUTDATED_NO_RESTART.warn(name);
-                }
+            downloadTabooLib(information, true);
+            return;
+        }
+        // 进行 HASH 检测，与最新版本进行对比。
+        else if (pluginFile.getFileConfiguration().getBoolean("lib-download", true)) {
+            Info information = getTabooLibInformation();
+            if (information == null) {
+                enableBoot = false;
+                PluginLocale.LOAD_NO_INTERNAL.warn(name);
+                return;
+            }
+            if (!information.getHash().equals(IO.getFileHash(tabooLibFile, "sha-256"))) {
+                downloadTabooLib(information, true);
+                return;
             }
         }
-
         // 当 Forge 服务端
-        if (isForge) {
+        if (forgeBase) {
             // 当 TabooLib 未被加载
             if (Bukkit.getPluginManager().getPlugin("TabooLib5") == null) {
                 // 将 TabooLib 通过插件方式加载到服务端
                 PluginLocale.LOAD_FORGE_MODE.warn();
-                PluginHandle.LoadPluginMode();
+                enableTabooLibAsPlugin();
             }
         }
         // 当 TabooLib 未被加载
-        else if (!PluginHandle.isLoaded()) {
-            // 在线模式
-            if (!description.getBoolean("lib-download", true)) {
-                // 检查插件文件
-                PluginHandle.checkPlugins();
-                // 当 TabooLib 存在插件文件夹时
-                if (PluginHandle.getPluginModeFile() != null) {
-                    isDisabled = true;
-                    PluginLocale.LOAD_IN_PLUGINS.warn(PluginHandle.getPluginModeFile().getName());
-                    PluginHandle.getPluginModeFile().delete();
-                    PluginHandle.sleep(5000L);
+        else if (!ILoader.isExists("io.izzel.taboolib.TabooLib")) {
+            // 检查插件文件
+            checkPlugins();
+            // 如果 TabooLib 在插件文件夹内
+            if (checkedPlugins.containsKey(PluginFile.Type.PLUGIN_MODE)) {
+                enableBoot = false;
+                PluginLocale.LOAD_IN_PLUGINS.warn();
+                File wrong = checkedPlugins.get(PluginFile.Type.PLUGIN_MODE).getFile();
+                // 如果 TabooLib 本体不存在则复制过去
+                if (!tabooLibFile.exists()) {
+                    IO.copy(wrong, tabooLibFile);
+                }
+                wrong.delete();
+                Bukkit.shutdown();
+                return;
+            }
+            // 当 TabooLib 4.X 存在插件文件夹时
+            if (checkedPlugins.containsKey(PluginFile.Type.LEGACY_VERSION) && !new File("plugins/TabooLib/check").exists()) {
+                PluginFile legacyFile = checkedPlugins.get(PluginFile.Type.LEGACY_VERSION);
+                double legacyVersion = NumberConversions.toDouble(legacyFile.getPluginDescriptionFile().getVersion());
+                // 进行版本检测
+                // 保证 4.X 插件版本兼容 5.X 内置版本
+                if (legacyVersion > 3.0 && legacyVersion < 4.92) {
+                    enableBoot = false;
+                    IO.file(new File("plugins/TabooLib/check"));
+                    IO.downloadFile("https://skymc.oss-cn-shanghai.aliyuncs.com/plugins/TabooLib-4.92.jar", legacyFile.getFile());
+                    PluginLocale.LOAD_COMPAT_MODE_UPDATE.warn();
                     Bukkit.shutdown();
                     return;
-                }
-                // 当 TabooLib 4.X 存在插件文件夹时
-                if (PluginHandle.getPluginOriginFile() != null && !new File("plugins/TabooLib/check").exists()) {
-                    double legacyVersion = NumberConversions.toDouble(PluginHandle.getPluginOriginDescriptionFile().getVersion());
-                    // 进行版本检测
-                    // 保证 4.X 插件版本兼容 5.X 内置版本
-                    if (legacyVersion > 3.0 && legacyVersion < 4.92) {
-                        isDisabled = true;
-                        IO.file(new File("plugins/TabooLib/check"));
-                        IO.downloadFile("https://skymc.oss-cn-shanghai.aliyuncs.com/plugins/TabooLib-4.92.jar", PluginHandle.getPluginOriginFile());
-                        PluginLocale.LOAD_COMPAT_MODE_UPDATE.warn(PluginHandle.getPluginOriginFile().getName());
-                        PluginHandle.sleep(5000L);
-                        Bukkit.shutdown();
-                        return;
-                    } else {
-                        PluginLocale.LOAD_COMPAT_MODE.warn(PluginHandle.getPluginOriginFile().getName(), PluginHandle.getLegacy());
-                    }
+                } else {
+                    PluginLocale.LOAD_COMPAT_MODE.warn(outdatedPlugins.keySet());
                 }
             }
             // 将 TabooLib 通过 Bukkit.class 类加载器加载至内存中供其他插件使用
@@ -268,35 +284,164 @@ public class PluginBoot extends JavaPlugin {
             if (ILoader.addPath(tabooLibFile)) {
                 // 初始化 TabooLib 主类
                 if (ILoader.forName("io.izzel.taboolib.TabooLib", true, Bukkit.class.getClassLoader()) != null) {
-                    PluginLocale.LOAD_SUCCESS.info(PluginHandle.getVersion(), name);
+                    PluginLocale.LOAD_SUCCESS.info(getTabooLibVersion().getSource(), name);
                 } else {
-                    isDisabled = true;
+                    enableBoot = false;
                     PluginLocale.LOAD_FAILED.warn(name);
                 }
             } else {
-                isDisabled = true;
+                enableBoot = false;
                 PluginLocale.LOAD_FAILED.warn(name);
             }
         }
-        // 清理临时文件
-        IO.deepDelete(new File("plugins/TabooLib/temp"));
     }
 
-    static {
+    /**
+     * 检查插件文件夹
+     * 记录所有与 TabooLib 有关的插件备用
+     */
+    public static void checkPlugins() {
+        for (File file : new File("plugins").listFiles()) {
+            if (!file.getName().endsWith(".jar") || file.length() == 0L) {
+                continue;
+            }
+            PluginFile pluginFile = null;
+            try (ZipFile zip = new ZipFile(file); InputStream stream = zip.getInputStream(zip.getEntry("plugin.yml"))) {
+                String readFully = IO.readFully(stream);
+                pluginFile = new PluginFile(file, new PluginDescriptionFile(new ByteArrayInputStream(readFully.getBytes(StandardCharsets.UTF_8))), readFully);
+            } catch (Throwable ignored) {
+            }
+            if (pluginFile == null) {
+                continue;
+            }
+            if (pluginFile.getName().equals("TabooLib5")) {
+                checkedPlugins.put(PluginFile.Type.PLUGIN_MODE, pluginFile);
+            } else if (pluginFile.getName().equals("TabooLib")) {
+                checkedPlugins.put(PluginFile.Type.LEGACY_VERSION, pluginFile);
+            }
+            if (pluginFile.getPluginDescriptionFile().getDepend().contains("TabooLib")) {
+                outdatedPlugins.put(pluginFile.getName(), pluginFile);
+            }
+        }
+    }
+
+    /**
+     * 联网获取 TabooLib 版本信息
+     */
+    public static Info getTabooLibInformation() {
         try {
-            for (Class<?> c : IO.getClasses(PluginBoot.class)) {
-                if (Plugin.class.isAssignableFrom(c) && !Plugin.class.equals(c)) {
-                    mainClass = c;
-                    break;
+            JsonObject json = new JsonParser().parse(IO.readFromURL(URL, "{}")).getAsJsonObject();
+            if (json.has("version")) {
+                Version version = new Version(json.get("version").getAsString());
+                JsonObject history = json.get("history").getAsJsonObject().get(version.getSource()).getAsJsonObject();
+                return new Info(version, history.get("url").getAsString(), history.get("sha-256").getAsString(), history.get("upload-time").getAsLong());
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * 获取当前服务端中 TabooLib 的版本号
+     */
+    public static Version getTabooLibVersion() {
+        if (tabooLibVersion != null) {
+            return tabooLibVersion;
+        }
+        try (ZipFile zipFile = new ZipFile(tabooLibFile); InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
+            FileConfiguration configuration = new YamlConfiguration();
+            configuration.loadFromString(IO.readFully(inputStream));
+            tabooLibVersion = new Version(Objects.requireNonNull(configuration.getString("version")));
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return tabooLibVersion;
+    }
+
+    /**
+     * 尝试下载依赖文件
+     * 若禁用下载模式则无法下载，返回值为是否下载成功
+     */
+    public static boolean downloadTabooLib(Info information, boolean restart) {
+        if (pluginFile.getFileConfiguration().getBoolean("lib-download", true)) {
+            PluginLocale.LOAD_DOWNLOAD.info();
+            if (information == null) {
+                information = getTabooLibInformation();
+            }
+            // 下载文件
+            if (information != null && IO.downloadFile(information.getUrl(), IO.file(tabooLibFile))) {
+                // 是否对服务器进行重启
+                if (restart) {
+                    if (Bukkit.getOnlinePlayers().isEmpty()) {
+                        PluginLocale.LOAD_OUTDATED.warn();
+                        Bukkit.shutdown();
+                    } else {
+                        PluginLocale.LOAD_OUTDATED_NO_RESTART.warn(pluginFile.getName());
+                    }
                 }
+                return true;
+            }
+            PluginLocale.LOAD_NO_INTERNAL.warn(pluginFile.getName());
+            return false;
+        }
+        PluginLocale.LOAD_OFFLINE.warn(pluginFile.getName());
+        return false;
+    }
+
+    /**
+     * 以插件模式加载依赖
+     * 该方法仅适用于含有 Forge 的服务端
+     */
+    public static void enableTabooLibAsPlugin() {
+        try {
+            org.bukkit.plugin.Plugin bukkitPlugin = Bukkit.getPluginManager().loadPlugin(tabooLibFile);
+            if (bukkitPlugin != null) {
+                bukkitPlugin.onLoad();
+                Bukkit.getPluginManager().enablePlugin(bukkitPlugin);
             }
         } catch (Throwable t) {
+            enableBoot = false;
             t.printStackTrace();
         }
-        try {
-            init();
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+    }
+
+    public static void setEnableBoot(boolean enableBoot) {
+        PluginBoot.enableBoot = enableBoot;
+    }
+
+    public static boolean isEnableBoot() {
+        return enableBoot;
+    }
+
+    public static boolean isForgeBase() {
+        return forgeBase;
+    }
+
+    public static Class<?> getMainClass() {
+        return mainClass;
+    }
+
+    public static Plugin getPlugin() {
+        return plugin;
+    }
+
+    public static PluginBoot getPluginBoot() {
+        return pluginBoot;
+    }
+
+    public static PluginFile getPluginFile() {
+        return pluginFile;
+    }
+
+    public static File getTabooLibFile() {
+        return tabooLibFile;
+    }
+
+    public static Map<String, PluginFile> getOutdatedPlugins() {
+        return outdatedPlugins;
+    }
+
+    public static Map<PluginFile.Type, PluginFile> getCheckedPlugins() {
+        return checkedPlugins;
     }
 }

@@ -1,12 +1,16 @@
 package io.izzel.taboolib.loader.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.*;
+import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarFile;
 
@@ -37,7 +41,15 @@ public class IO {
 
     public static boolean downloadFile(String in, File file) {
         try (InputStream inputStream = new URL(in).openStream(); BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
-            toFile(bufferedInputStream, file);
+            try (FileOutputStream fos = new FileOutputStream(file); BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = inputStream.read(buf)) > 0) {
+                    bos.write(buf, 0, len);
+                }
+                bos.flush();
+            } catch (Exception ignored) {
+            }
             return true;
         } catch (Throwable t) {
             t.printStackTrace();
@@ -45,33 +57,21 @@ public class IO {
         return false;
     }
 
-    public static File toFile(InputStream inputStream, File file) {
-        try (FileOutputStream fos = new FileOutputStream(file); BufferedOutputStream bos = new BufferedOutputStream(fos)) {
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = inputStream.read(buf)) > 0) {
-                bos.write(buf, 0, len);
-            }
-            bos.flush();
-        } catch (Exception ignored) {
-        }
-        return file;
-    }
-
     public static void copy(File file1, File file2) {
-        try (FileInputStream fileIn = new FileInputStream(file1); FileOutputStream fileOut = new FileOutputStream(file2); FileChannel channelIn = fileIn.getChannel(); FileChannel channelOut = fileOut.getChannel()) {
+        try (FileInputStream fileIn = new FileInputStream(file1);
+             FileOutputStream fileOut = new FileOutputStream(file2);
+             FileChannel channelIn = fileIn.getChannel();
+             FileChannel channelOut = fileOut.getChannel()) {
             channelIn.transferTo(0, channelIn.size(), channelOut);
         } catch (IOException t) {
             t.printStackTrace();
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static File file(File file) {
         if (!file.exists()) {
-            folder(file);
             try {
-                file.createNewFile();
+                folder(file).createNewFile();
             } catch (Throwable t) {
                 t.printStackTrace();
             }
@@ -79,7 +79,6 @@ public class IO {
         return file;
     }
 
-    @SuppressWarnings({"UnusedReturnValue", "ResultOfMethodCallIgnored"})
     public static File folder(File file) {
         if (!file.exists()) {
             String filePath = file.getPath();
@@ -93,19 +92,21 @@ public class IO {
         return file;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void deepDelete(File file) {
-        if (!file.exists()) {
-            return;
+    @Nullable
+    public static String getFileHash(File file, @NotNull String algorithm) {
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            MessageDigest digest = MessageDigest.getInstance(algorithm);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = fileInputStream.read(buffer, 0, 1024)) != -1) {
+                digest.update(buffer, 0, length);
+            }
+            byte[] md5Bytes = digest.digest();
+            return new BigInteger(1, md5Bytes).toString(16);
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
-        if (file.isFile()) {
-            file.delete();
-            return;
-        }
-        for (File file1 : Objects.requireNonNull(file.listFiles())) {
-            deepDelete(file1);
-        }
-        file.delete();
+        return null;
     }
 
     public static String replaceWithOrder(String template, Object... args) {

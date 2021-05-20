@@ -24,7 +24,7 @@ public class ILoader extends URLClassLoader {
     static Method addUrlMethod;
 
     static {
-        if (PluginBoot.isForge()) {
+        if (PluginBoot.isForgeBase()) {
             try {
                 addUrlMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
                 addUrlMethod.setAccessible(true);
@@ -56,7 +56,7 @@ public class ILoader extends URLClassLoader {
     public static boolean addPath(File file) {
         try {
             ClassLoader loader = Bukkit.class.getClassLoader();
-            if (PluginBoot.isForge()) {
+            if (PluginBoot.isForgeBase()) {
                 addUrlMethod.invoke(loader, file.toURI().toURL());
             } else if (loader.getClass().getSimpleName().equals("LaunchClassLoader")) {
                 MethodHandle methodHandle = lookup.findVirtual(loader.getClass(), "addURL", MethodType.methodType(void.class, java.net.URL.class));
@@ -65,7 +65,7 @@ public class ILoader extends URLClassLoader {
                 Field ucpField;
                 try {
                     ucpField = loader.getClass().getDeclaredField("ucp");
-                } catch (NoSuchFieldError e) {
+                } catch (NoSuchFieldError | NoSuchFieldException e) {
                     ucpField = loader.getClass().getSuperclass().getDeclaredField("ucp");
                 }
                 long ucpOffset = unsafe.objectFieldOffset(ucpField);
@@ -78,6 +78,10 @@ public class ILoader extends URLClassLoader {
             t.printStackTrace();
         }
         return false;
+    }
+
+    public static boolean isExists(String clazz) {
+        return ILoader.forName(clazz, false, PluginBoot.class.getClassLoader()) != null;
     }
 
     public static Class<?> forName(String name, boolean initialize, ClassLoader loader) {

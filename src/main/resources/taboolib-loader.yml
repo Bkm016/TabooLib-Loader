@@ -8,7 +8,7 @@ load-offline:
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-outdated:
   - '**** THE SERVER IS RUNNING AN OUTDATED VERSION OF TABOOLIB ****'
-  - 'The TabooLib has been updated and the server will be restarted in 5 seconds.'
+  - 'The TabooLib has been updated and the server will be restart.'
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-outdated-no-restart:
   - '**** THE SERVER IS RUNNING AN OUTDATED VERSION OF TABOOLIB ****'
@@ -16,16 +16,16 @@ load-outdated-no-restart:
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-in-plugins:
   - '**** THE SERVER IS RUNNING A WRONG PATH OF TABOOLIB ****'
-  - 'The TabooLib 5.0+ cannot be loaded in the plugins folder.'
+  - 'The TabooLib 5.0+ cannot be loaded in the plugins folder and the server will be restart.'
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-compat-mode:
   - '**** THE TABOOLIB IS RUNNING ON COMPATIBILITY MODE ****'
   - 'The TabooLib 5.0+ will stop being compatible with {0} when Minecraft 1.17 is released.'
-  - 'The {1} is currently based on {0}, update as soon as possible.'
+  - 'The {1} is currently based on TabooLib 4.X, update as soon as possible.'
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-compat-mode-update:
   - '**** THE TABOOLIB IS RUNNING ON COMPATIBILITY MODE ****'
-  - 'The {0} has been forced to update and the server will be restarted in 5 seconds.'
+  - 'The TabooLib 4.X has been forced to update and the server will be restart.'
   - 'If this warning should not appear here, please see http://github.com/TabooLib/TabooLib/issues for feedback.'
 load-forge-mode:
   - '**** THE TABOOLIB IS RUNNING ON COMPATIBILITY MODE ****'

@@ -11,15 +11,15 @@ import org.jetbrains.annotations.Nullable;
 public class Plugin {
 
     public void onLoad() {
-
     }
 
     public void onEnable() {
+    }
 
+    public void onActive() {
     }
 
     public void onDisable() {
-
     }
 
     public boolean allowHotswap() {
@@ -32,10 +32,10 @@ public class Plugin {
     }
 
     public PluginBoot getPlugin() {
-        return PluginBoot.getPluginBase();
+        return PluginBoot.getPluginBoot();
     }
 
     public static Plugin getInstance() {
-        return PluginBoot.getPluginInstance();
+        return PluginBoot.getPlugin();
     }
 }

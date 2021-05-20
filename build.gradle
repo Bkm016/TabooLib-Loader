@@ -1,21 +1,39 @@
 plugins {
     id 'java'
+    id 'maven'
 }
 
 group = 'io.izzel.taboolib.loader'
-version = '2.12'
+version = '3.0.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    maven { url "http://repo.ptms.ink/repository/codemc-nms/" }
     maven { url "http://repo.ptms.ink/repository/maven-releases/" }
     mavenCentral()
 }
 
 dependencies {
-    implementation 'io.izzel.taboolib:TabooLib:5.62:all'
-    implementation 'ink.ptms.core:v11500:11500:all'
-    implementation 'org.jetbrains:annotations:19.0.0'
+    compileOnly 'io.izzel.taboolib:TabooLib:5.62:all'
+    compileOnly 'ink.ptms.core:v11500:11500:all'
+    compileOnly 'org.jetbrains:annotations:19.0.0'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: 'http://ptms.ink:8081/repository/maven-releases/') {
+                authentication(userName: project.findProperty('user'), password: project.findProperty('password'))
+            }
+            pom.artifactId = rootProject.name
+            pom.groupId = 'io.izzel.taboolib'
+            pom.version = project.version
+            pom.packaging = 'jar'
+        }
+    }
+}
+
+jar {
+    classifier('all')
 }
