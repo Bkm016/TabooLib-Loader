@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -166,9 +167,9 @@ public class PluginBoot extends JavaPlugin {
         }
     }
 
-    static void initialize() {
+    static void initialize() throws URISyntaxException {
         // 检查插件
-        File file = new File(PluginBoot.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+        File file = new File(PluginBoot.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         try (ZipFile zip = new ZipFile(file); InputStream stream = zip.getInputStream(zip.getEntry("plugin.yml"))) {
             String readFully = IO.readFully(stream);
             pluginFile = new PluginFile(file, new PluginDescriptionFile(new ByteArrayInputStream(readFully.getBytes(StandardCharsets.UTF_8))), readFully);
