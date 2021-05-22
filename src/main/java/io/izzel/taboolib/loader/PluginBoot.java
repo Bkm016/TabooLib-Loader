@@ -233,6 +233,7 @@ public class PluginBoot extends JavaPlugin {
                 return;
             }
             if (!information.getHash().equals(IO.getFileHash(tabooLibFile, "sha-256"))) {
+                enableBoot = false;
                 downloadTabooLib(information, true);
                 return;
             }
