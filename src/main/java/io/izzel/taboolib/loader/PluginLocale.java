@@ -14,7 +14,7 @@ import java.util.Objects;
  */
 public enum PluginLocale {
 
-    LOAD_NO_INTERNAL,
+    LOAD_NO_INTERNET,
 
     LOAD_OFFLINE,
 

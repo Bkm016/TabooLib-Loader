@@ -211,7 +211,7 @@ public class PluginBoot extends JavaPlugin {
             // 获取版本信息
             Info information = getTabooLibInformation();
             if (information == null) {
-                PluginLocale.LOAD_NO_INTERNAL.warn(name);
+                PluginLocale.LOAD_NO_INTERNET.warn(name);
                 return;
             }
             // 检查依赖版本是否合理
@@ -229,7 +229,7 @@ public class PluginBoot extends JavaPlugin {
             Info information = getTabooLibInformation();
             if (information == null) {
                 enableBoot = false;
-                PluginLocale.LOAD_NO_INTERNAL.warn(name);
+                PluginLocale.LOAD_NO_INTERNET.warn(name);
                 return;
             }
             if (!information.getHash().equals(IO.getFileHash(tabooLibFile, "sha-256"))) {
@@ -382,7 +382,7 @@ public class PluginBoot extends JavaPlugin {
                 }
                 return true;
             }
-            PluginLocale.LOAD_NO_INTERNAL.warn(pluginFile.getName());
+            PluginLocale.LOAD_NO_INTERNET.warn(pluginFile.getName());
             return false;
         }
         PluginLocale.LOAD_OFFLINE.warn(pluginFile.getName());
