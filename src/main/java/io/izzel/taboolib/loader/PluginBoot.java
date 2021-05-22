@@ -225,7 +225,7 @@ public class PluginBoot extends JavaPlugin {
             return;
         }
         // 进行 HASH 检测，与最新版本进行对比。
-        else if (pluginFile.getFileConfiguration().getBoolean("lib-download", true)) {
+        else if (pluginFile.getFileConfiguration().getBoolean("lib-download", true) && !new File("plugins/TabooLib/iamdeveloper").exists()) {
             Info information = getTabooLibInformation();
             if (information == null) {
                 enableBoot = false;
