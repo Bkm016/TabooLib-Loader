@@ -63,13 +63,12 @@ public class PluginBoot extends JavaPlugin {
         tabooLibFile = new File("libs/TabooLib.jar");
         checkedPlugins = new HashMap<>();
         outdatedPlugins = new HashMap<>();
-        tabooLibDependVersion = new Version(Objects.requireNonNull(pluginFile.getFileConfiguration().getString("lib-version")));
         try (ZipFile zipFile = new ZipFile(tabooLibFile); InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
             FileConfiguration configuration = new YamlConfiguration();
             configuration.loadFromString(IO.readFully(inputStream));
             tabooLibVersion = new Version(Objects.requireNonNull(configuration.getString("version")));
         } catch (Throwable t) {
-            tabooLibVersion = new Version("0.0.0");
+            enableBoot = false;
             t.printStackTrace();
         }
         try {
@@ -179,11 +178,15 @@ public class PluginBoot extends JavaPlugin {
     }
 
     static void initialize() throws URISyntaxException {
+        if (!enableBoot) {
+            return;
+        }
         // 检查插件
         File file = new File(PluginBoot.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         try (ZipFile zip = new ZipFile(file); InputStream stream = zip.getInputStream(zip.getEntry("plugin.yml"))) {
             String readFully = IO.readFully(stream);
             pluginFile = new PluginFile(file, new PluginDescriptionFile(new ByteArrayInputStream(readFully.getBytes(StandardCharsets.UTF_8))), readFully);
+            tabooLibDependVersion = new Version(Objects.requireNonNull(pluginFile.getFileConfiguration().getString("lib-version")));
             checkedPlugins.put(PluginFile.Type.SELF, pluginFile);
         } catch (Throwable e) {
             enableBoot = false;
