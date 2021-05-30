@@ -49,6 +49,8 @@ public class PluginBoot extends JavaPlugin {
 
     protected static Version tabooLibVersion;
 
+    protected static Version tabooLibDependVersion;
+
     protected static boolean enableBoot = true;
 
     protected static final Map<String, PluginFile> outdatedPlugins;
@@ -61,6 +63,15 @@ public class PluginBoot extends JavaPlugin {
         tabooLibFile = new File("libs/TabooLib.jar");
         checkedPlugins = new HashMap<>();
         outdatedPlugins = new HashMap<>();
+        tabooLibDependVersion = new Version(Objects.requireNonNull(pluginFile.getFileConfiguration().getString("lib-version")));
+        try (ZipFile zipFile = new ZipFile(tabooLibFile); InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
+            FileConfiguration configuration = new YamlConfiguration();
+            configuration.loadFromString(IO.readFully(inputStream));
+            tabooLibVersion = new Version(Objects.requireNonNull(configuration.getString("version")));
+        } catch (Throwable t) {
+            tabooLibVersion = new Version("0.0.0");
+            t.printStackTrace();
+        }
         try {
             for (Class<?> clazz : IO.getClasses(PluginBoot.class)) {
                 if (Plugin.class.isAssignableFrom(clazz) && !Plugin.class.equals(clazz)) {
@@ -204,9 +215,9 @@ public class PluginBoot extends JavaPlugin {
         }
         // 低于 5.19 版本无法在 Kotlin 作为主类的条件下检查更新
         // 低于 5.34 版本无法在 CatServer 服务端下启动
-        Version dependVersion = new Version(Objects.requireNonNull(pluginFile.getFileConfiguration().getString("lib-version")));
+        Version depend = new Version(Objects.requireNonNull(pluginFile.getFileConfiguration().getString("lib-version")));
         // 依赖版本高于当前运行版本
-        if (dependVersion.isAfter(version)) {
+        if (depend.isAfter(version)) {
             enableBoot = false;
             // 获取版本信息
             Info information = getTabooLibInformation();
@@ -217,25 +228,27 @@ public class PluginBoot extends JavaPlugin {
             // 检查依赖版本是否合理
             // 如果插件使用不合理的版本则跳过下载防止死循环
             // 并跳过插件加载
-            if (dependVersion.isAfter(information.getVersion())) {
-                PluginLocale.LOAD_INVALID_VERSION.warn(name, dependVersion, information.getVersion().getSource());
+            if (depend.isAfter(information.getVersion())) {
+                PluginLocale.LOAD_INVALID_VERSION.warn(name, depend, information.getVersion().getSource());
                 return;
             }
             downloadTabooLib(information, true);
             return;
-        }
-        // 进行 HASH 检测，与最新版本进行对比。
-        else if (pluginFile.getFileConfiguration().getBoolean("lib-download", true) && !new File("plugins/TabooLib/iamdeveloper").exists()) {
-            Info information = getTabooLibInformation();
-            if (information == null) {
-                enableBoot = false;
-                PluginLocale.LOAD_NO_INTERNET.warn(name);
-                return;
-            }
-            if (!information.getHash().equals(IO.getFileHash(tabooLibFile, "sha-256"))) {
-                enableBoot = false;
-                downloadTabooLib(information, true);
-                return;
+        } else {
+            boolean developer = new File("plugins/TabooLib/iamdeveloper").exists();
+            // 版本相同进行 HASH 检测
+            if (depend.equals(version) && pluginFile.getFileConfiguration().getBoolean("lib-download", true) && !developer) {
+                Info information = getTabooLibInformation();
+                if (information == null) {
+                    enableBoot = false;
+                    PluginLocale.LOAD_NO_INTERNET.warn(name);
+                    return;
+                }
+                if (!information.getHash().equals(IO.getFileHash(tabooLibFile, "sha-256"))) {
+                    enableBoot = false;
+                    downloadTabooLib(information, true);
+                    return;
+                }
             }
         }
         // 当 Forge 服务端
@@ -334,30 +347,30 @@ public class PluginBoot extends JavaPlugin {
         try {
             JsonObject json = new JsonParser().parse(IO.readFromURL(URL, "{}")).getAsJsonObject();
             if (json.has("version")) {
-                Version version = new Version(json.get("version").getAsString());
-                JsonObject history = json.get("history").getAsJsonObject().get(version.getSource()).getAsJsonObject();
-                return new Info(version, history.get("url").getAsString(), history.get("sha-256").getAsString(), history.get("upload-time").getAsLong());
+                // 最新版本号
+                Version newVersion = new Version(json.get("version").getAsString());
+                // 最新版本数据
+                JsonObject newestJson = json.get("history").getAsJsonObject().get(newVersion.getSource()).getAsJsonObject();
+                // 最新版本信息
+                Info newestInfo = new Info(
+                        newVersion,
+                        newestJson.get("url").getAsString(),
+                        newestJson.get("sha-256").getAsString(),
+                        newestJson.get("upload-time").getAsLong()
+                );
+                // 依赖版本数据
+                JsonObject dependJson = json.get("history").getAsJsonObject().get(tabooLibDependVersion.getSource()).getAsJsonObject();
+                return new Info(
+                        tabooLibDependVersion,
+                        dependJson.get("url").getAsString(),
+                        dependJson.get("sha-256").getAsString(),
+                        dependJson.get("upload-time").getAsLong(),
+                        newestInfo
+                );
             }
         } catch (Exception ignored) {
         }
         return null;
-    }
-
-    /**
-     * 获取当前服务端中 TabooLib 的版本号
-     */
-    public static Version getTabooLibVersion() {
-        if (tabooLibVersion != null) {
-            return tabooLibVersion;
-        }
-        try (ZipFile zipFile = new ZipFile(tabooLibFile); InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
-            FileConfiguration configuration = new YamlConfiguration();
-            configuration.loadFromString(IO.readFully(inputStream));
-            tabooLibVersion = new Version(Objects.requireNonNull(configuration.getString("version")));
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return tabooLibVersion;
     }
 
     /**
@@ -437,6 +450,14 @@ public class PluginBoot extends JavaPlugin {
 
     public static File getTabooLibFile() {
         return tabooLibFile;
+    }
+
+    public static Version getTabooLibVersion() {
+        return tabooLibVersion;
+    }
+
+    public static Version getTabooLibDependVersion() {
+        return tabooLibDependVersion;
     }
 
     public static Map<String, PluginFile> getOutdatedPlugins() {
