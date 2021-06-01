@@ -63,14 +63,6 @@ public class PluginBoot extends JavaPlugin {
         tabooLibFile = new File("libs/TabooLib.jar");
         checkedPlugins = new HashMap<>();
         outdatedPlugins = new HashMap<>();
-        try (ZipFile zipFile = new ZipFile(tabooLibFile); InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
-            FileConfiguration configuration = new YamlConfiguration();
-            configuration.loadFromString(IO.readFully(inputStream));
-            tabooLibVersion = new Version(Objects.requireNonNull(configuration.getString("version")));
-        } catch (Throwable t) {
-            enableBoot = false;
-            t.printStackTrace();
-        }
         try {
             for (Class<?> clazz : IO.getClasses(PluginBoot.class)) {
                 if (Plugin.class.isAssignableFrom(clazz) && !Plugin.class.equals(clazz)) {
@@ -423,6 +415,20 @@ public class PluginBoot extends JavaPlugin {
         }
     }
 
+    public static Version getTabooLibVersion() {
+        if (tabooLibVersion == null) {
+            try (ZipFile zipFile = new ZipFile(tabooLibFile); InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("plugin.yml"))) {
+                FileConfiguration configuration = new YamlConfiguration();
+                configuration.loadFromString(IO.readFully(inputStream));
+                tabooLibVersion = new Version(Objects.requireNonNull(configuration.getString("version")));
+            } catch (Throwable t) {
+                enableBoot = false;
+                t.printStackTrace();
+            }
+        }
+        return tabooLibVersion;
+    }
+
     public static void setEnableBoot(boolean enableBoot) {
         PluginBoot.enableBoot = enableBoot;
     }
@@ -453,10 +459,6 @@ public class PluginBoot extends JavaPlugin {
 
     public static File getTabooLibFile() {
         return tabooLibFile;
-    }
-
-    public static Version getTabooLibVersion() {
-        return tabooLibVersion;
     }
 
     public static Version getTabooLibDependVersion() {
